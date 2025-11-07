@@ -1,0 +1,92 @@
+HELP.md
+target/
+.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+
+### STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
+
+### NetBeans ###
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+build/
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+### VS Code ###
+.vscode/
+
+### ============================================================================
+### SENSITIVE FILES - IMPORTANT!
+### ============================================================================
+# Archivos con secretos y credenciales - NO SUBIR A GIT
+application-local.properties
+application-prod.properties
+application-dev.properties
+*.env
+.env.local
+.env.production
+
+# Credenciales de Mercado Pago
+mercadopago-credentials.json
+
+# Claves JWT
+jwt-keys/
+
+### ============================================================================
+### LOGS
+### ============================================================================
+*.log
+logs/
+spring.log
+
+### ============================================================================
+### DATABASE FILES
+### ============================================================================
+*.db
+*.sqlite
+*.h2.db
+
+### ============================================================================
+### SYSTEM FILES
+### ============================================================================
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Linux
+*~
+
+### ============================================================================
+### TEMPORARY FILES
+### ============================================================================
+*.tmp
+*.bak
+*.swp
+*.swo
+*~.nib
+*.pid
+*.seed
+*.pid.lock
