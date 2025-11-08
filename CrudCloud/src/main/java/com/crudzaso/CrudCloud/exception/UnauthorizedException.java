@@ -1,4 +1,7 @@
 package com.crudzaso.CrudCloud.exception;
 
-public class UnauthorizedException {
+public class UnauthorizedException extends AppException {
+    public UnauthorizedException(String message) {
+        super(message, "UNAUTHORIZED");
+    }
 }
