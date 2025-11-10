@@ -9,7 +9,6 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -35,7 +34,7 @@ public class GlobalExceptionHandler {
             HttpServletRequest request) {
 
         ErrorResponse errorResponse = ErrorResponse.builder()
-                .timestamp(LocalDateTime.now())
+                .timestamp(System.currentTimeMillis())
                 .status(ex.getStatusCode())
                 .error(HttpStatus.valueOf(ex.getStatusCode()).getReasonPhrase())
                 .message(ex.getMessage())
@@ -64,7 +63,7 @@ public class GlobalExceptionHandler {
         );
 
         ErrorResponse errorResponse = ErrorResponse.builder()
-                .timestamp(LocalDateTime.now())
+                .timestamp(System.currentTimeMillis())
                 .status(HttpStatus.BAD_REQUEST.value())
                 .error(HttpStatus.BAD_REQUEST.getReasonPhrase())
                 .message("Validation failed")
@@ -89,7 +88,7 @@ public class GlobalExceptionHandler {
             HttpServletRequest request) {
 
         ErrorResponse errorResponse = ErrorResponse.builder()
-                .timestamp(LocalDateTime.now())
+                .timestamp(System.currentTimeMillis())
                 .status(HttpStatus.INTERNAL_SERVER_ERROR.value())
                 .error(HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase())
                 .message("An unexpected error occurred")

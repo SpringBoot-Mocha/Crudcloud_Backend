@@ -6,7 +6,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
 import java.util.Map;
 
 /**
@@ -22,9 +21,9 @@ import java.util.Map;
 public class ErrorResponse {
 
     /**
-     * Timestamp of the error occurrence.
+     * Timestamp of the error occurrence (Unix epoch millis).
      */
-    private LocalDateTime timestamp;
+    private Long timestamp;
 
     /**
      * HTTP status code.
