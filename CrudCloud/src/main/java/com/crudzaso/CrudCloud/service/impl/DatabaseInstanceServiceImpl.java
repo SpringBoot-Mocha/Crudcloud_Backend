@@ -7,6 +7,7 @@ import com.crudzaso.CrudCloud.domain.entity.User;
 import com.crudzaso.CrudCloud.domain.enums.InstanceStatus;
 import com.crudzaso.CrudCloud.dto.request.CreateInstanceRequest;
 import com.crudzaso.CrudCloud.dto.response.DatabaseInstanceResponse;
+import com.crudzaso.CrudCloud.exception.ResourceNotFoundException;
 import com.crudzaso.CrudCloud.repository.DatabaseEngineRepository;
 import com.crudzaso.CrudCloud.repository.DatabaseInstanceRepository;
 import com.crudzaso.CrudCloud.repository.SubscriptionRepository;

@@ -55,8 +55,8 @@ public class JwtServiceImpl implements JwtService {
     @Override
     public boolean validateToken(String token) {
         try {
-            Jwts.parserBuilder()
-                .verifyingKey(getSigningKey())
+            Jwts.parser()
+                .verifyWith(getSigningKey())
                 .build()
                 .parseSignedClaims(token);
             return true;
@@ -69,11 +69,12 @@ public class JwtServiceImpl implements JwtService {
     @Override
     public String getUsernameFromToken(String token) {
         try {
-            Claims claims = Jwts.parserBuilder()
-                .verifyingKey(getSigningKey())
+            Claims claims = Jwts.parser()
+                .verifyWith(getSigningKey())
                 .build()
                 .parseSignedClaims(token)
                 .getPayload();
+                
 
             return claims.getSubject();
         } catch (Exception e) {

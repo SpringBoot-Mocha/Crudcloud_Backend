@@ -32,5 +32,5 @@ public class CreateInstanceRequest {
      * Custom name for the database instance (optional)
      * If not provided, will be auto-generated
      */
-    private Long instanceName;
+    private String instanceName;
 }
