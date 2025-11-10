@@ -19,6 +19,18 @@ public class ResourceNotFoundException extends BusinessException {
     }
 
     /**
+     * Constructs a ResourceNotFoundException with resource name and ID.
+     * Legacy constructor for backward compatibility.
+     *
+     * @param resourceName the name of the resource
+     * @param id the resource ID
+     */
+    public ResourceNotFoundException(String resourceName, Long id) {
+        super(String.format("%s with id %d not found", resourceName, id),
+              HttpStatus.NOT_FOUND.value());
+    }
+
+    /**
      * Constructs a ResourceNotFoundException with a formatted message.
      *
      * @param resourceName the name of the resource
