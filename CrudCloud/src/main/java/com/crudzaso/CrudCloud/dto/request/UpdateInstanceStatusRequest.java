@@ -1,7 +1,6 @@
 package com.crudzaso.CrudCloud.dto.request;
 
 import com.crudzaso.CrudCloud.domain.enums.InstanceStatus;
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Data;
