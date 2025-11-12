@@ -6,11 +6,11 @@ import com.crudzaso.CrudCloud.dto.request.UpdateUserRequest;
 import com.crudzaso.CrudCloud.dto.response.UserResponse;
 import com.crudzaso.CrudCloud.exception.AppException;
 import com.crudzaso.CrudCloud.exception.ResourceNotFoundException;
+import com.crudzaso.CrudCloud.mapper.UserMapper;
 import com.crudzaso.CrudCloud.repository.UserRepository;
 import com.crudzaso.CrudCloud.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.modelmapper.ModelMapper;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -24,7 +24,7 @@ import org.springframework.stereotype.Service;
 public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
-    private final ModelMapper modelMapper;
+    private final UserMapper userMapper;
     private final PasswordEncoder passwordEncoder;
 
     @Override
@@ -48,7 +48,7 @@ public class UserServiceImpl implements UserService {
 
         User savedUser = userRepository.save(user);
         log.info("User created successfully with ID: {}", savedUser.getId());
-        return modelMapper.map(savedUser, UserResponse.class);
+        return userMapper.toUserResponse(savedUser);
     }
 
     @Override
@@ -59,7 +59,7 @@ public class UserServiceImpl implements UserService {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User", id));
 
-        return modelMapper.map(user, UserResponse.class);
+        return userMapper.toUserResponse(user);
     }
 
     @Override
@@ -69,7 +69,7 @@ public class UserServiceImpl implements UserService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new AppException("User not found with email: " + email, "USER_NOT_FOUND"));
 
-        return modelMapper.map(user, UserResponse.class);
+        return userMapper.toUserResponse(user);
     }
 
     @Override
@@ -84,7 +84,7 @@ public class UserServiceImpl implements UserService {
         User updatedUser = userRepository.save(user);
 
         log.info("User updated successfully with ID: {}", id);
-        return modelMapper.map(updatedUser, UserResponse.class);
+        return userMapper.toUserResponse(updatedUser);
     }
 
     @Override

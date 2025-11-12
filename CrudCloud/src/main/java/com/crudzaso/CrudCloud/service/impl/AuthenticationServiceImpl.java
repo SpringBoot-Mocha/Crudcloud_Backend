@@ -5,12 +5,12 @@ import com.crudzaso.CrudCloud.dto.request.LoginRequest;
 import com.crudzaso.CrudCloud.dto.response.AuthResponse;
 import com.crudzaso.CrudCloud.dto.response.UserResponse;
 import com.crudzaso.CrudCloud.exception.UnauthorizedException;
+import com.crudzaso.CrudCloud.mapper.UserMapper;
 import com.crudzaso.CrudCloud.repository.UserRepository;
 import com.crudzaso.CrudCloud.service.AuthenticationService;
 import com.crudzaso.CrudCloud.service.JwtService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.modelmapper.ModelMapper;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -26,7 +26,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     private final UserRepository userRepository;
     private final JwtService jwtService;
     private final PasswordEncoder passwordEncoder;
-    private final ModelMapper modelMapper;
+    private final UserMapper userMapper;
 
     @Override
     public AuthResponse login(LoginRequest request) {
@@ -50,7 +50,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         log.info("Login successful for email: {}", request.getEmail());
 
         // Build response
-        UserResponse userResponse = modelMapper.map(user, UserResponse.class);
+        UserResponse userResponse = userMapper.toUserResponse(user);
         return AuthResponse.builder()
                 .token(token)
                 .user(userResponse)

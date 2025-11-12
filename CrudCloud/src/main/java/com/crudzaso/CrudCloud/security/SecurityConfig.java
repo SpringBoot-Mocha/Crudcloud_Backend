@@ -50,10 +50,10 @@ public class SecurityConfig {
                 .accessDeniedHandler(customAccessDeniedHandler)
             )
             .authorizeHttpRequests(authorize -> authorize
-                // Public endpoints
-                .requestMatchers("/api/v1/auth/**").permitAll()
-                .requestMatchers("/api/v1/engines/**").permitAll()
-                .requestMatchers("/api/v1/plans/**").permitAll()
+                // Public endpoints - Support both /api/auth/** and /api/v1/auth/**
+                .requestMatchers("/api/auth/**", "/api/v1/auth/**").permitAll()
+                .requestMatchers("/api/engines/**", "/api/v1/engines/**").permitAll()
+                .requestMatchers("/api/plans/**", "/api/v1/plans/**").permitAll()
                 .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
                 // Health check endpoint
                 .requestMatchers("/actuator/**").permitAll()

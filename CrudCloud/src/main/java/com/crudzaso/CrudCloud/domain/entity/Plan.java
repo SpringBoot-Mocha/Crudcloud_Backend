@@ -31,13 +31,13 @@ public class Plan {
     @Column(nullable = false, unique = true)
     private String name;
 
-    @Column(nullable = false)
+    @Column(name = "max_instances", nullable = false)
     private Integer maxInstances;
 
-    @Column(nullable = false)
+    @Column(name = "max_storage_gb", nullable = false)
     private Long maxStorageGB;
 
-    @Column(nullable = false, precision = 10, scale = 2)
+    @Column(name = "price_per_month", nullable = false, precision = 10, scale = 2)
     private BigDecimal pricePerMonth;
 
     @Column(columnDefinition = "TEXT")
