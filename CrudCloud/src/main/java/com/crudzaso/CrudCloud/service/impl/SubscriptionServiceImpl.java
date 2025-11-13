@@ -12,7 +12,7 @@ import com.crudzaso.CrudCloud.repository.UserRepository;
 import com.crudzaso.CrudCloud.service.SubscriptionService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.modelmapper.ModelMapper;
+import com.crudzaso.CrudCloud.mapper.SubscriptionMapper;
 import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 
@@ -28,7 +28,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     private final SubscriptionRepository subscriptionRepository;
     private final UserRepository userRepository;
     private final PlanRepository planRepository;
-    private final ModelMapper modelMapper;
+    private final SubscriptionMapper subscriptionMapper;
 
     @Override
     public SubscriptionResponse createSubscription(CreateSubscriptionRequest request) {
@@ -54,7 +54,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
         Subscription savedSubscription = subscriptionRepository.save(subscription);
         log.info("Subscription created successfully with ID: {}", savedSubscription.getId());
 
-        return mapToResponse(savedSubscription, plan.getName());
+        return subscriptionMapper.toResponse(savedSubscription);
     }
 
     @Override
@@ -65,7 +65,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
         Subscription subscription = subscriptionRepository.findByUserIdAndIsActive(userId, true)
                 .orElseThrow(() -> new ResourceNotFoundException("Subscription", userId));
 
-        return mapToResponse(subscription, subscription.getPlan().getName());
+        return subscriptionMapper.toResponse(subscription);
     }
 
     @Override
@@ -75,19 +75,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
         Subscription subscription = subscriptionRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Subscription", id));
 
-        return mapToResponse(subscription, subscription.getPlan().getName());
+        return subscriptionMapper.toResponse(subscription);
     }
 
-    private SubscriptionResponse mapToResponse(Subscription subscription, String planName) {
-        return SubscriptionResponse.builder()
-                .id(subscription.getId())
-                .userId(subscription.getUser().getId())
-                .planId(subscription.getPlan().getId())
-                .planName(planName)
-                .startDate(subscription.getStartDate())
-                .endDate(subscription.getEndDate())
-                .isActive(subscription.getIsActive())
-                .createdAt(subscription.getCreatedAt())
-                .build();
-    }
 }

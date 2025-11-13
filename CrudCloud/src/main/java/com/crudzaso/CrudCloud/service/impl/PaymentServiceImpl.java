@@ -12,7 +12,7 @@ import com.crudzaso.CrudCloud.repository.UserRepository;
 import com.crudzaso.CrudCloud.service.PaymentService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.modelmapper.ModelMapper;
+import com.crudzaso.CrudCloud.mapper.TransactionMapper;
 import org.springframework.stereotype.Service;
 
 import java.util.UUID;
@@ -28,7 +28,7 @@ public class PaymentServiceImpl implements PaymentService {
 
     private final TransactionRepository transactionRepository;
     private final UserRepository userRepository;
-    private final ModelMapper modelMapper;
+    private final TransactionMapper transactionMapper;
 
     @Override
     public TransactionResponse createPayment(CreatePaymentRequest request) {
@@ -54,7 +54,7 @@ public class PaymentServiceImpl implements PaymentService {
             Transaction savedTransaction = transactionRepository.save(transaction);
             log.info("Transaction created successfully with ID: {}", savedTransaction.getId());
 
-            return modelMapper.map(savedTransaction, TransactionResponse.class);
+            return transactionMapper.toResponse(savedTransaction);
 
         } catch (Exception e) {
             log.error("Error creating payment: {}", e.getMessage());
@@ -69,7 +69,7 @@ public class PaymentServiceImpl implements PaymentService {
         Transaction transaction = transactionRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Transaction", id));
 
-        return modelMapper.map(transaction, TransactionResponse.class);
+        return transactionMapper.toResponse(transaction);
     }
 
     @Override

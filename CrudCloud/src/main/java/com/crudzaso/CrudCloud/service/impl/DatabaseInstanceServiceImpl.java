@@ -8,6 +8,7 @@ import com.crudzaso.CrudCloud.domain.enums.InstanceStatus;
 import com.crudzaso.CrudCloud.dto.request.CreateInstanceRequest;
 import com.crudzaso.CrudCloud.dto.response.DatabaseInstanceResponse;
 import com.crudzaso.CrudCloud.exception.ResourceNotFoundException;
+import com.crudzaso.CrudCloud.mapper.DatabaseInstanceMapper;
 import com.crudzaso.CrudCloud.repository.DatabaseEngineRepository;
 import com.crudzaso.CrudCloud.repository.DatabaseInstanceRepository;
 import com.crudzaso.CrudCloud.repository.SubscriptionRepository;
@@ -15,7 +16,6 @@ import com.crudzaso.CrudCloud.repository.UserRepository;
 import com.crudzaso.CrudCloud.service.DatabaseInstanceService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -35,7 +35,7 @@ public class DatabaseInstanceServiceImpl implements DatabaseInstanceService {
     private final UserRepository userRepository;
     private final SubscriptionRepository subscriptionRepository;
     private final DatabaseEngineRepository databaseEngineRepository;
-    private final ModelMapper modelMapper;
+    private final DatabaseInstanceMapper databaseInstanceMapper;
 
     @Override
     public DatabaseInstanceResponse createInstance(CreateInstanceRequest request) {
@@ -73,7 +73,7 @@ public class DatabaseInstanceServiceImpl implements DatabaseInstanceService {
         DatabaseInstance savedInstance = databaseInstanceRepository.save(instance);
         log.info("Database instance created successfully with ID: {}", savedInstance.getId());
 
-        return modelMapper.map(savedInstance, DatabaseInstanceResponse.class);
+        return databaseInstanceMapper.toResponse(savedInstance);
     }
 
     @Override
@@ -83,17 +83,14 @@ public class DatabaseInstanceServiceImpl implements DatabaseInstanceService {
         DatabaseInstance instance = databaseInstanceRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Database Instance", id));
 
-        return modelMapper.map(instance, DatabaseInstanceResponse.class);
+        return databaseInstanceMapper.toResponse(instance);
     }
 
     @Override
     public List<DatabaseInstanceResponse> getUserInstances(Long userId) {
         log.debug("Fetching all instances for user ID: {}", userId);
 
-        List<DatabaseInstance> instances = databaseInstanceRepository.findByUserId(userId);
-        return instances.stream()
-                .map(instance -> modelMapper.map(instance, DatabaseInstanceResponse.class))
-                .toList();
+        return databaseInstanceMapper.toResponseList(databaseInstanceRepository.findByUserId(userId));
     }
 
     @Override
@@ -107,7 +104,7 @@ public class DatabaseInstanceServiceImpl implements DatabaseInstanceService {
         DatabaseInstance updatedInstance = databaseInstanceRepository.save(instance);
 
         log.info("Database instance status updated successfully with ID: {}", id);
-        return modelMapper.map(updatedInstance, DatabaseInstanceResponse.class);
+        return databaseInstanceMapper.toResponse(updatedInstance);
     }
 
     private String generateContainerName(Long userId) {

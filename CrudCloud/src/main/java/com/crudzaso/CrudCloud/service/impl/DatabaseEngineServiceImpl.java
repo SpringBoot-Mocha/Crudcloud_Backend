@@ -2,15 +2,14 @@ package com.crudzaso.CrudCloud.service.impl;
 
 import com.crudzaso.CrudCloud.dto.response.DatabaseEngineResponse;
 import com.crudzaso.CrudCloud.exception.ResourceNotFoundException;
+import com.crudzaso.CrudCloud.mapper.DatabaseEngineMapper;
 import com.crudzaso.CrudCloud.repository.DatabaseEngineRepository;
 import com.crudzaso.CrudCloud.service.DatabaseEngineService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * Implementation of DatabaseEngineService.
@@ -23,7 +22,7 @@ import java.util.stream.Collectors;
 public class DatabaseEngineServiceImpl implements DatabaseEngineService {
 
     private final DatabaseEngineRepository databaseEngineRepository;
-    private final ModelMapper modelMapper;
+    private final DatabaseEngineMapper databaseEngineMapper;
 
     /**
      * Get all available database engines.
@@ -33,10 +32,7 @@ public class DatabaseEngineServiceImpl implements DatabaseEngineService {
     @Override
     public List<DatabaseEngineResponse> getAllEngines() {
         log.info("Fetching all database engines");
-        return databaseEngineRepository.findAll()
-                .stream()
-                .map(engine -> modelMapper.map(engine, DatabaseEngineResponse.class))
-                .collect(Collectors.toList());
+        return databaseEngineMapper.toResponseList(databaseEngineRepository.findAll());
     }
 
     /**
@@ -50,7 +46,7 @@ public class DatabaseEngineServiceImpl implements DatabaseEngineService {
     public DatabaseEngineResponse getEngineById(Long id) {
         log.info("Fetching database engine with ID: {}", id);
         return databaseEngineRepository.findById(id)
-                .map(engine -> modelMapper.map(engine, DatabaseEngineResponse.class))
+                .map(databaseEngineMapper::toResponse)
                 .orElseThrow(() -> new ResourceNotFoundException("DatabaseEngine", "id", id));
     }
 }

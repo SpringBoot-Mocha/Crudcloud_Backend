@@ -21,14 +21,5 @@ public interface UserMapper {
      * @return the mapped user response DTO
      */
     @Mapping(source = "id", target = "userId")
-    UserResponse toUserResponse(User user);
-
-    /**
-     * Map User entity to UserResponse DTO (alternative method name for semantic clarity)
-     *
-     * @param user the user entity to map
-     * @return the mapped user response DTO
-     */
-    @Mapping(source = "id", target = "userId")
-    UserResponse userToDto(User user);
+    UserResponse toResponse(User user);
 }

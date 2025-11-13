@@ -60,6 +60,7 @@ public class Subscription {
      * Used for quick filtering of active subscriptions
      */
     @Column(nullable = false)
+    @Builder.Default
     private Boolean isActive = true;
 
     /**

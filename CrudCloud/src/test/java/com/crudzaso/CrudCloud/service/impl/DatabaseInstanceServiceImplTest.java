@@ -18,7 +18,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.modelmapper.ModelMapper;
+import com.crudzaso.CrudCloud.mapper.DatabaseInstanceMapper;
 
 import java.util.Arrays;
 import java.util.List;
@@ -49,7 +49,7 @@ class DatabaseInstanceServiceImplTest {
     private DatabaseEngineRepository databaseEngineRepository;
 
     @Mock
-    private ModelMapper modelMapper;
+    private DatabaseInstanceMapper databaseInstanceMapper;
 
     @InjectMocks
     private DatabaseInstanceServiceImpl databaseInstanceService;
@@ -141,7 +141,7 @@ class DatabaseInstanceServiceImplTest {
         when(subscriptionRepository.findById(10L)).thenReturn(Optional.of(subscription));
         when(databaseEngineRepository.findById(1L)).thenReturn(Optional.of(postgresEngine));
         when(databaseInstanceRepository.save(any(DatabaseInstance.class))).thenReturn(postgresInstance);
-        when(modelMapper.map(postgresInstance, DatabaseInstanceResponse.class)).thenReturn(postgresInstanceResponse);
+        when(databaseInstanceMapper.toResponse(postgresInstance)).thenReturn(postgresInstanceResponse);
 
         // When
         DatabaseInstanceResponse result = databaseInstanceService.createInstance(createRequest);
@@ -156,7 +156,7 @@ class DatabaseInstanceServiceImplTest {
         verify(subscriptionRepository).findById(10L);
         verify(databaseEngineRepository).findById(1L);
         verify(databaseInstanceRepository).save(any(DatabaseInstance.class));
-        verify(modelMapper).map(postgresInstance, DatabaseInstanceResponse.class);
+        verify(databaseInstanceMapper).toResponse(postgresInstance);
     }
 
     @Test
@@ -172,7 +172,7 @@ class DatabaseInstanceServiceImplTest {
             assertEquals("my-custom-db", instance.getContainerName());
             return postgresInstance;
         });
-        when(modelMapper.map(any(DatabaseInstance.class), eq(DatabaseInstanceResponse.class))).thenReturn(postgresInstanceResponse);
+        when(databaseInstanceMapper.toResponse(any(DatabaseInstance.class))).thenReturn(postgresInstanceResponse);
 
         // When
         DatabaseInstanceResponse result = databaseInstanceService.createInstance(createRequest);
@@ -266,7 +266,7 @@ class DatabaseInstanceServiceImplTest {
             assertEquals(InstanceStatus.CREATING, instance.getStatus());
             return postgresInstance;
         });
-        when(modelMapper.map(any(DatabaseInstance.class), eq(DatabaseInstanceResponse.class))).thenReturn(postgresInstanceResponse);
+        when(databaseInstanceMapper.toResponse(any(DatabaseInstance.class))).thenReturn(postgresInstanceResponse);
 
         // When
         databaseInstanceService.createInstance(createRequest);
@@ -279,7 +279,7 @@ class DatabaseInstanceServiceImplTest {
     void getInstance_Success() {
         // Given
         when(databaseInstanceRepository.findById(100L)).thenReturn(Optional.of(postgresInstance));
-        when(modelMapper.map(postgresInstance, DatabaseInstanceResponse.class)).thenReturn(postgresInstanceResponse);
+        when(databaseInstanceMapper.toResponse(postgresInstance)).thenReturn(postgresInstanceResponse);
 
         // When
         DatabaseInstanceResponse result = databaseInstanceService.getInstance(100L);
@@ -290,7 +290,7 @@ class DatabaseInstanceServiceImplTest {
         assertEquals(InstanceStatus.CREATING, result.getStatus());
 
         verify(databaseInstanceRepository).findById(100L);
-        verify(modelMapper).map(postgresInstance, DatabaseInstanceResponse.class);
+        verify(databaseInstanceMapper).toResponse(postgresInstance);
     }
 
     @Test
@@ -304,16 +304,16 @@ class DatabaseInstanceServiceImplTest {
         });
 
         verify(databaseInstanceRepository).findById(999L);
-        verify(modelMapper, never()).map(any(), any());
+        verify(databaseInstanceMapper, never()).toResponse(any());
     }
 
     @Test
     void getUserInstances_Success() {
         // Given
         List<DatabaseInstance> instances = Arrays.asList(postgresInstance, mysqlInstance);
+        List<DatabaseInstanceResponse> expectedResponses = Arrays.asList(postgresInstanceResponse, mysqlInstanceResponse);
         when(databaseInstanceRepository.findByUserId(1L)).thenReturn(instances);
-        when(modelMapper.map(postgresInstance, DatabaseInstanceResponse.class)).thenReturn(postgresInstanceResponse);
-        when(modelMapper.map(mysqlInstance, DatabaseInstanceResponse.class)).thenReturn(mysqlInstanceResponse);
+        when(databaseInstanceMapper.toResponseList(instances)).thenReturn(expectedResponses);
 
         // When
         List<DatabaseInstanceResponse> result = databaseInstanceService.getUserInstances(1L);
@@ -325,13 +325,15 @@ class DatabaseInstanceServiceImplTest {
         assertEquals(101L, result.get(1).getId());
 
         verify(databaseInstanceRepository).findByUserId(1L);
-        verify(modelMapper, times(2)).map(any(DatabaseInstance.class), eq(DatabaseInstanceResponse.class));
+        verify(databaseInstanceMapper).toResponseList(instances);
     }
 
     @Test
     void getUserInstances_EmptyList_ReturnsEmptyList() {
         // Given
-        when(databaseInstanceRepository.findByUserId(999L)).thenReturn(Arrays.asList());
+        List<DatabaseInstance> emptyList = Arrays.asList();
+        when(databaseInstanceRepository.findByUserId(999L)).thenReturn(emptyList);
+        when(databaseInstanceMapper.toResponseList(emptyList)).thenReturn(Arrays.asList());
 
         // When
         List<DatabaseInstanceResponse> result = databaseInstanceService.getUserInstances(999L);
@@ -341,7 +343,7 @@ class DatabaseInstanceServiceImplTest {
         assertTrue(result.isEmpty());
 
         verify(databaseInstanceRepository).findByUserId(999L);
-        verify(modelMapper, never()).map(any(), any());
+        verify(databaseInstanceMapper).toResponseList(emptyList);
     }
 
     @Test
@@ -364,7 +366,7 @@ class DatabaseInstanceServiceImplTest {
 
         when(databaseInstanceRepository.findById(100L)).thenReturn(Optional.of(postgresInstance));
         when(databaseInstanceRepository.save(any(DatabaseInstance.class))).thenReturn(updatedInstance);
-        when(modelMapper.map(updatedInstance, DatabaseInstanceResponse.class)).thenReturn(updatedResponse);
+        when(databaseInstanceMapper.toResponse(updatedInstance)).thenReturn(updatedResponse);
 
         // When
         DatabaseInstanceResponse result = databaseInstanceService.updateInstanceStatus(100L, InstanceStatus.RUNNING);
@@ -378,7 +380,7 @@ class DatabaseInstanceServiceImplTest {
         verify(databaseInstanceRepository).save(argThat(instance ->
             instance.getStatus() == InstanceStatus.RUNNING
         ));
-        verify(modelMapper).map(updatedInstance, DatabaseInstanceResponse.class);
+        verify(databaseInstanceMapper).toResponse(updatedInstance);
     }
 
     @Test
@@ -390,7 +392,7 @@ class DatabaseInstanceServiceImplTest {
             assertEquals(InstanceStatus.SUSPENDED, instance.getStatus());
             return instance;
         });
-        when(modelMapper.map(any(DatabaseInstance.class), eq(DatabaseInstanceResponse.class))).thenReturn(postgresInstanceResponse);
+        when(databaseInstanceMapper.toResponse(any(DatabaseInstance.class))).thenReturn(postgresInstanceResponse);
 
         // When
         databaseInstanceService.updateInstanceStatus(100L, InstanceStatus.SUSPENDED);
@@ -410,7 +412,7 @@ class DatabaseInstanceServiceImplTest {
             assertEquals(InstanceStatus.DELETED, instance.getStatus());
             return instance;
         });
-        when(modelMapper.map(any(DatabaseInstance.class), eq(DatabaseInstanceResponse.class))).thenReturn(postgresInstanceResponse);
+        when(databaseInstanceMapper.toResponse(any(DatabaseInstance.class))).thenReturn(postgresInstanceResponse);
 
         // When
         databaseInstanceService.updateInstanceStatus(100L, InstanceStatus.DELETED);

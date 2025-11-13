@@ -77,7 +77,7 @@
 
 ### Utilities & Tools
 - **Lombok** - Boilerplate code reduction
-- **ModelMapper** - `3.2.5` - DTO mapping
+- **MapStruct** - `1.6.3` - Type-safe DTO mapping (compile-time)
 - **SpringDoc OpenAPI** - `2.6.0` - API documentation
 - **Jackson** - JSON serialization with JSR-310 support
 
@@ -283,8 +283,7 @@ CrudCloud/
 │   ├── main/
 │   │   ├── java/com/crudzaso/CrudCloud/
 │   │   │   ├── config/                    # Configuration classes
-│   │   │   │   ├── JacksonConfig.java
-│   │   │   │   └── ModelMapperConfig.java
+│   │   │   │   └── JacksonConfig.java
 │   │   │   ├── controller/                # REST Controllers (7 controllers)
 │   │   │   │   ├── AuthController.java
 │   │   │   │   ├── UserController.java

@@ -48,7 +48,7 @@ public class UserServiceImpl implements UserService {
 
         User savedUser = userRepository.save(user);
         log.info("User created successfully with ID: {}", savedUser.getId());
-        return userMapper.toUserResponse(savedUser);
+        return userMapper.toResponse(savedUser);
     }
 
     @Override
@@ -59,7 +59,7 @@ public class UserServiceImpl implements UserService {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User", id));
 
-        return userMapper.toUserResponse(user);
+        return userMapper.toResponse(user);
     }
 
     @Override
@@ -69,7 +69,7 @@ public class UserServiceImpl implements UserService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new AppException("User not found with email: " + email, "USER_NOT_FOUND"));
 
-        return userMapper.toUserResponse(user);
+        return userMapper.toResponse(user);
     }
 
     @Override
@@ -84,7 +84,7 @@ public class UserServiceImpl implements UserService {
         User updatedUser = userRepository.save(user);
 
         log.info("User updated successfully with ID: {}", id);
-        return userMapper.toUserResponse(updatedUser);
+        return userMapper.toResponse(updatedUser);
     }
 
     @Override

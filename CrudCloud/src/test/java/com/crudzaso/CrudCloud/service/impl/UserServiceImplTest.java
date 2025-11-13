@@ -6,6 +6,7 @@ import com.crudzaso.CrudCloud.dto.request.UpdateUserRequest;
 import com.crudzaso.CrudCloud.dto.response.UserResponse;
 import com.crudzaso.CrudCloud.exception.AppException;
 import com.crudzaso.CrudCloud.exception.ResourceNotFoundException;
+import com.crudzaso.CrudCloud.mapper.UserMapper;
 import com.crudzaso.CrudCloud.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -13,7 +14,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.modelmapper.ModelMapper;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.Optional;
@@ -34,7 +34,7 @@ class UserServiceImplTest {
     private UserRepository userRepository;
 
     @Mock
-    private ModelMapper modelMapper;
+    private UserMapper userMapper;
 
     @Mock
     private PasswordEncoder passwordEncoder;
@@ -80,7 +80,7 @@ class UserServiceImplTest {
         when(userRepository.existsByEmail(anyString())).thenReturn(false);
         when(passwordEncoder.encode(anyString())).thenReturn("$2a$10$hashedPassword");
         when(userRepository.save(any(User.class))).thenReturn(user);
-        when(modelMapper.map(any(User.class), eq(UserResponse.class))).thenReturn(userResponse);
+        when(userMapper.toResponse(any(User.class))).thenReturn(userResponse);
 
         // When
         UserResponse result = userService.createUser(createUserRequest);
@@ -93,7 +93,7 @@ class UserServiceImplTest {
         verify(userRepository).existsByEmail("test@example.com");
         verify(passwordEncoder).encode("password123");
         verify(userRepository).save(any(User.class));
-        verify(modelMapper).map(any(User.class), eq(UserResponse.class));
+        verify(userMapper).toResponse(any(User.class));
     }
 
     @Test
@@ -115,7 +115,7 @@ class UserServiceImplTest {
     void getUserById_Success() {
         // Given
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
-        when(modelMapper.map(any(User.class), eq(UserResponse.class))).thenReturn(userResponse);
+        when(userMapper.toResponse(any(User.class))).thenReturn(userResponse);
 
         // When
         UserResponse result = userService.getUserById(1L);
@@ -126,7 +126,7 @@ class UserServiceImplTest {
         assertEquals("test@example.com", result.getEmail());
 
         verify(userRepository).findById(1L);
-        verify(modelMapper).map(user, UserResponse.class);
+        verify(userMapper).toResponse(user);
     }
 
     @Test
@@ -140,14 +140,14 @@ class UserServiceImplTest {
         });
 
         verify(userRepository).findById(999L);
-        verify(modelMapper, never()).map(any(), any());
+        verify(userMapper, never()).toResponse(any());
     }
 
     @Test
     void getUserByEmail_Success() {
         // Given
         when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(user));
-        when(modelMapper.map(any(User.class), eq(UserResponse.class))).thenReturn(userResponse);
+        when(userMapper.toResponse(any(User.class))).thenReturn(userResponse);
 
         // When
         UserResponse result = userService.getUserByEmail("test@example.com");
@@ -157,7 +157,7 @@ class UserServiceImplTest {
         assertEquals("test@example.com", result.getEmail());
 
         verify(userRepository).findByEmail("test@example.com");
-        verify(modelMapper).map(user, UserResponse.class);
+        verify(userMapper).toResponse(user);
     }
 
     @Test
@@ -192,7 +192,7 @@ class UserServiceImplTest {
 
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
         when(userRepository.save(any(User.class))).thenReturn(updatedUser);
-        when(modelMapper.map(any(User.class), eq(UserResponse.class))).thenReturn(updatedUserResponse);
+        when(userMapper.toResponse(any(User.class))).thenReturn(updatedUserResponse);
 
         // When
         UserResponse result = userService.updateUser(1L, updateUserRequest);
@@ -203,7 +203,7 @@ class UserServiceImplTest {
 
         verify(userRepository).findById(1L);
         verify(userRepository).save(any(User.class));
-        verify(modelMapper).map(any(User.class), eq(UserResponse.class));
+        verify(userMapper).toResponse(any(User.class));
     }
 
     @Test

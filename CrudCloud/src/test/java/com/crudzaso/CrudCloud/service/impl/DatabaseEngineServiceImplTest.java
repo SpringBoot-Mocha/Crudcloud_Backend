@@ -10,7 +10,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.modelmapper.ModelMapper;
+import com.crudzaso.CrudCloud.mapper.DatabaseEngineMapper;
 
 import java.util.Arrays;
 import java.util.List;
@@ -32,7 +32,7 @@ class DatabaseEngineServiceImplTest {
     private DatabaseEngineRepository databaseEngineRepository;
 
     @Mock
-    private ModelMapper modelMapper;
+    private DatabaseEngineMapper databaseEngineMapper;
 
     @InjectMocks
     private DatabaseEngineServiceImpl databaseEngineService;
@@ -96,10 +96,9 @@ class DatabaseEngineServiceImplTest {
     void getAllEngines_Success() {
         // Given
         List<DatabaseEngine> engines = Arrays.asList(postgresEngine, mysqlEngine, mongoEngine);
+        List<DatabaseEngineResponse> expectedResponses = Arrays.asList(postgresResponse, mysqlResponse, mongoResponse);
         when(databaseEngineRepository.findAll()).thenReturn(engines);
-        when(modelMapper.map(postgresEngine, DatabaseEngineResponse.class)).thenReturn(postgresResponse);
-        when(modelMapper.map(mysqlEngine, DatabaseEngineResponse.class)).thenReturn(mysqlResponse);
-        when(modelMapper.map(mongoEngine, DatabaseEngineResponse.class)).thenReturn(mongoResponse);
+        when(databaseEngineMapper.toResponseList(engines)).thenReturn(expectedResponses);
 
         // When
         List<DatabaseEngineResponse> result = databaseEngineService.getAllEngines();
@@ -112,13 +111,15 @@ class DatabaseEngineServiceImplTest {
         assertEquals("MongoDB", result.get(2).getName());
 
         verify(databaseEngineRepository).findAll();
-        verify(modelMapper, times(3)).map(any(DatabaseEngine.class), eq(DatabaseEngineResponse.class));
+        verify(databaseEngineMapper).toResponseList(engines);
     }
 
     @Test
     void getAllEngines_EmptyList_ReturnsEmptyList() {
         // Given
-        when(databaseEngineRepository.findAll()).thenReturn(Arrays.asList());
+        List<DatabaseEngine> emptyList = Arrays.asList();
+        when(databaseEngineRepository.findAll()).thenReturn(emptyList);
+        when(databaseEngineMapper.toResponseList(emptyList)).thenReturn(Arrays.asList());
 
         // When
         List<DatabaseEngineResponse> result = databaseEngineService.getAllEngines();
@@ -128,14 +129,16 @@ class DatabaseEngineServiceImplTest {
         assertTrue(result.isEmpty());
 
         verify(databaseEngineRepository).findAll();
-        verify(modelMapper, never()).map(any(), any());
+        verify(databaseEngineMapper).toResponseList(emptyList);
     }
 
     @Test
     void getAllEngines_SingleEngine_ReturnsOne() {
         // Given
-        when(databaseEngineRepository.findAll()).thenReturn(Arrays.asList(postgresEngine));
-        when(modelMapper.map(postgresEngine, DatabaseEngineResponse.class)).thenReturn(postgresResponse);
+        List<DatabaseEngine> singleEngineList = Arrays.asList(postgresEngine);
+        List<DatabaseEngineResponse> expectedResponses = Arrays.asList(postgresResponse);
+        when(databaseEngineRepository.findAll()).thenReturn(singleEngineList);
+        when(databaseEngineMapper.toResponseList(singleEngineList)).thenReturn(expectedResponses);
 
         // When
         List<DatabaseEngineResponse> result = databaseEngineService.getAllEngines();
@@ -147,14 +150,14 @@ class DatabaseEngineServiceImplTest {
         assertEquals(5432, result.get(0).getDefaultPort());
 
         verify(databaseEngineRepository).findAll();
-        verify(modelMapper).map(postgresEngine, DatabaseEngineResponse.class);
+        verify(databaseEngineMapper).toResponseList(Arrays.asList(postgresEngine));
     }
 
     @Test
     void getEngineById_Success() {
         // Given
         when(databaseEngineRepository.findById(1L)).thenReturn(Optional.of(postgresEngine));
-        when(modelMapper.map(postgresEngine, DatabaseEngineResponse.class)).thenReturn(postgresResponse);
+        when(databaseEngineMapper.toResponse(postgresEngine)).thenReturn(postgresResponse);
 
         // When
         DatabaseEngineResponse result = databaseEngineService.getEngineById(1L);
@@ -167,14 +170,14 @@ class DatabaseEngineServiceImplTest {
         assertEquals(5432, result.getDefaultPort());
 
         verify(databaseEngineRepository).findById(1L);
-        verify(modelMapper).map(postgresEngine, DatabaseEngineResponse.class);
+        verify(databaseEngineMapper).toResponse(postgresEngine);
     }
 
     @Test
     void getEngineById_MySQLEngine_Success() {
         // Given
         when(databaseEngineRepository.findById(2L)).thenReturn(Optional.of(mysqlEngine));
-        when(modelMapper.map(mysqlEngine, DatabaseEngineResponse.class)).thenReturn(mysqlResponse);
+        when(databaseEngineMapper.toResponse(mysqlEngine)).thenReturn(mysqlResponse);
 
         // When
         DatabaseEngineResponse result = databaseEngineService.getEngineById(2L);
@@ -193,7 +196,7 @@ class DatabaseEngineServiceImplTest {
     void getEngineById_MongoDBEngine_Success() {
         // Given
         when(databaseEngineRepository.findById(3L)).thenReturn(Optional.of(mongoEngine));
-        when(modelMapper.map(mongoEngine, DatabaseEngineResponse.class)).thenReturn(mongoResponse);
+        when(databaseEngineMapper.toResponse(mongoEngine)).thenReturn(mongoResponse);
 
         // When
         DatabaseEngineResponse result = databaseEngineService.getEngineById(3L);
@@ -223,23 +226,22 @@ class DatabaseEngineServiceImplTest {
         assertTrue(exception.getMessage().contains("999"));
 
         verify(databaseEngineRepository).findById(999L);
-        verify(modelMapper, never()).map(any(), any());
+        verify(databaseEngineMapper, never()).toResponse(any());
     }
 
     @Test
     void getAllEngines_VerifyMapperCalledForEachEngine() {
         // Given
         List<DatabaseEngine> engines = Arrays.asList(postgresEngine, mysqlEngine);
+        List<DatabaseEngineResponse> expectedResponses = Arrays.asList(postgresResponse, mysqlResponse);
         when(databaseEngineRepository.findAll()).thenReturn(engines);
-        when(modelMapper.map(postgresEngine, DatabaseEngineResponse.class)).thenReturn(postgresResponse);
-        when(modelMapper.map(mysqlEngine, DatabaseEngineResponse.class)).thenReturn(mysqlResponse);
+        when(databaseEngineMapper.toResponseList(engines)).thenReturn(expectedResponses);
 
         // When
         List<DatabaseEngineResponse> result = databaseEngineService.getAllEngines();
 
         // Then
         assertEquals(2, result.size());
-        verify(modelMapper).map(postgresEngine, DatabaseEngineResponse.class);
-        verify(modelMapper).map(mysqlEngine, DatabaseEngineResponse.class);
+        verify(databaseEngineMapper).toResponseList(engines);
     }
 }

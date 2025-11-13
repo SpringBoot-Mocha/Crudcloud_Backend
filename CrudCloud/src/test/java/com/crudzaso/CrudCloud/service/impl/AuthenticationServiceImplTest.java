@@ -5,6 +5,7 @@ import com.crudzaso.CrudCloud.dto.request.LoginRequest;
 import com.crudzaso.CrudCloud.dto.response.AuthResponse;
 import com.crudzaso.CrudCloud.dto.response.UserResponse;
 import com.crudzaso.CrudCloud.exception.UnauthorizedException;
+import com.crudzaso.CrudCloud.mapper.UserMapper;
 import com.crudzaso.CrudCloud.repository.UserRepository;
 import com.crudzaso.CrudCloud.service.JwtService;
 import org.junit.jupiter.api.BeforeEach;
@@ -13,7 +14,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.modelmapper.ModelMapper;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.Optional;
@@ -40,7 +40,7 @@ class AuthenticationServiceImplTest {
     private PasswordEncoder passwordEncoder;
 
     @Mock
-    private ModelMapper modelMapper;
+    private UserMapper userMapper;
 
     @InjectMocks
     private AuthenticationServiceImpl authenticationService;
@@ -78,7 +78,7 @@ class AuthenticationServiceImplTest {
         when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(user));
         when(passwordEncoder.matches("password123", "$2a$10$hashedPassword")).thenReturn(true);
         when(jwtService.generateToken("test@example.com")).thenReturn(expectedToken);
-        when(modelMapper.map(any(User.class), eq(UserResponse.class))).thenReturn(userResponse);
+        when(userMapper.toResponse(any(User.class))).thenReturn(userResponse);
 
         // When
         AuthResponse result = authenticationService.login(loginRequest);
@@ -92,7 +92,7 @@ class AuthenticationServiceImplTest {
         verify(userRepository).findByEmail("test@example.com");
         verify(passwordEncoder).matches("password123", "$2a$10$hashedPassword");
         verify(jwtService).generateToken("test@example.com");
-        verify(modelMapper).map(user, UserResponse.class);
+        verify(userMapper).toResponse(user);
     }
 
     @Test
@@ -146,7 +146,7 @@ class AuthenticationServiceImplTest {
         when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(user));
         when(passwordEncoder.matches("password123", "$2a$10$hashedPassword")).thenReturn(true);
         when(jwtService.generateToken("test@example.com")).thenReturn(expectedToken);
-        when(modelMapper.map(any(User.class), eq(UserResponse.class))).thenReturn(userResponse);
+        when(userMapper.toResponse(any(User.class))).thenReturn(userResponse);
 
         // When
         AuthResponse result = authenticationService.login(loginRequest);
@@ -164,7 +164,7 @@ class AuthenticationServiceImplTest {
         when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(user));
         when(passwordEncoder.matches(anyString(), anyString())).thenReturn(true);
         when(jwtService.generateToken(anyString())).thenReturn("token");
-        when(modelMapper.map(user, UserResponse.class)).thenReturn(userResponse);
+        when(userMapper.toResponse(user)).thenReturn(userResponse);
 
         // When
         AuthResponse result = authenticationService.login(loginRequest);
@@ -175,6 +175,6 @@ class AuthenticationServiceImplTest {
         assertEquals("test@example.com", result.getUser().getEmail());
         assertEquals("Test User", result.getUser().getName());
 
-        verify(modelMapper).map(user, UserResponse.class);
+        verify(userMapper).toResponse(user);
     }
 }

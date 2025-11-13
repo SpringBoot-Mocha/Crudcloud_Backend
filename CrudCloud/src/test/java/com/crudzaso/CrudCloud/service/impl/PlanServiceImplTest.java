@@ -3,6 +3,7 @@ package com.crudzaso.CrudCloud.service.impl;
 import com.crudzaso.CrudCloud.domain.entity.Plan;
 import com.crudzaso.CrudCloud.dto.response.PlanResponse;
 import com.crudzaso.CrudCloud.exception.ResourceNotFoundException;
+import com.crudzaso.CrudCloud.mapper.PlanMapper;
 import com.crudzaso.CrudCloud.repository.PlanRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -10,7 +11,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.modelmapper.ModelMapper;
 import org.springframework.data.domain.Sort;
 
 import java.math.BigDecimal;
@@ -34,7 +34,7 @@ class PlanServiceImplTest {
     private PlanRepository planRepository;
 
     @Mock
-    private ModelMapper modelMapper;
+    private PlanMapper planMapper;
 
     @InjectMocks
     private PlanServiceImpl planService;
@@ -109,10 +109,9 @@ class PlanServiceImplTest {
     void getAllPlans_Success() {
         // Given
         List<Plan> plans = Arrays.asList(freePlan, standardPlan, premiumPlan);
+        List<PlanResponse> expectedResponses = Arrays.asList(freePlanResponse, standardPlanResponse, premiumPlanResponse);
         when(planRepository.findAll(any(Sort.class))).thenReturn(plans);
-        when(modelMapper.map(freePlan, PlanResponse.class)).thenReturn(freePlanResponse);
-        when(modelMapper.map(standardPlan, PlanResponse.class)).thenReturn(standardPlanResponse);
-        when(modelMapper.map(premiumPlan, PlanResponse.class)).thenReturn(premiumPlanResponse);
+        when(planMapper.toResponseList(plans)).thenReturn(expectedResponses);
 
         // When
         List<PlanResponse> result = planService.getAllPlans();
@@ -125,13 +124,15 @@ class PlanServiceImplTest {
         assertEquals("PREMIUM", result.get(2).getName());
 
         verify(planRepository).findAll(any(Sort.class));
-        verify(modelMapper, times(3)).map(any(Plan.class), eq(PlanResponse.class));
+        verify(planMapper).toResponseList(plans);
     }
 
     @Test
     void getAllPlans_EmptyList_ReturnsEmptyList() {
         // Given
-        when(planRepository.findAll(any(Sort.class))).thenReturn(Arrays.asList());
+        List<Plan> emptyPlans = Arrays.asList();
+        when(planRepository.findAll(any(Sort.class))).thenReturn(emptyPlans);
+        when(planMapper.toResponseList(emptyPlans)).thenReturn(Arrays.asList());
 
         // When
         List<PlanResponse> result = planService.getAllPlans();
@@ -141,15 +142,16 @@ class PlanServiceImplTest {
         assertTrue(result.isEmpty());
 
         verify(planRepository).findAll(any(Sort.class));
-        verify(modelMapper, never()).map(any(), any());
+        verify(planMapper).toResponseList(emptyPlans);
     }
 
     @Test
     void getAllPlans_VerifySortingByPrice() {
         // Given
         List<Plan> plans = Arrays.asList(freePlan);
+        List<PlanResponse> expectedResponses = Arrays.asList(freePlanResponse);
         when(planRepository.findAll(any(Sort.class))).thenReturn(plans);
-        when(modelMapper.map(any(Plan.class), eq(PlanResponse.class))).thenReturn(freePlanResponse);
+        when(planMapper.toResponseList(plans)).thenReturn(expectedResponses);
 
         // When
         planService.getAllPlans();
@@ -160,13 +162,14 @@ class PlanServiceImplTest {
                    sort.getOrderFor("priceMonth") != null &&
                    sort.getOrderFor("priceMonth").getDirection() == Sort.Direction.ASC;
         }));
+        verify(planMapper).toResponseList(plans);
     }
 
     @Test
     void getPlanById_Success() {
         // Given
         when(planRepository.findById(2L)).thenReturn(Optional.of(standardPlan));
-        when(modelMapper.map(standardPlan, PlanResponse.class)).thenReturn(standardPlanResponse);
+        when(planMapper.toResponse(standardPlan)).thenReturn(standardPlanResponse);
 
         // When
         PlanResponse result = planService.getPlanById(2L);
@@ -180,7 +183,7 @@ class PlanServiceImplTest {
         assertEquals(100L, result.getMaxStorageGB());
 
         verify(planRepository).findById(2L);
-        verify(modelMapper).map(standardPlan, PlanResponse.class);
+        verify(planMapper).toResponse(standardPlan);
     }
 
     @Test
@@ -198,14 +201,14 @@ class PlanServiceImplTest {
         assertTrue(exception.getMessage().contains("999"));
 
         verify(planRepository).findById(999L);
-        verify(modelMapper, never()).map(any(), any());
+        verify(planMapper, never()).toResponse(any());
     }
 
     @Test
     void getPlanById_FreePlan_ReturnsCorrectData() {
         // Given
         when(planRepository.findById(1L)).thenReturn(Optional.of(freePlan));
-        when(modelMapper.map(freePlan, PlanResponse.class)).thenReturn(freePlanResponse);
+        when(planMapper.toResponse(freePlan)).thenReturn(freePlanResponse);
 
         // When
         PlanResponse result = planService.getPlanById(1L);
@@ -218,13 +221,14 @@ class PlanServiceImplTest {
         assertEquals(1, result.getMaxInstances());
 
         verify(planRepository).findById(1L);
+        verify(planMapper).toResponse(freePlan);
     }
 
     @Test
     void getPlanById_PremiumPlan_ReturnsCorrectData() {
         // Given
         when(planRepository.findById(3L)).thenReturn(Optional.of(premiumPlan));
-        when(modelMapper.map(premiumPlan, PlanResponse.class)).thenReturn(premiumPlanResponse);
+        when(planMapper.toResponse(premiumPlan)).thenReturn(premiumPlanResponse);
 
         // When
         PlanResponse result = planService.getPlanById(3L);
@@ -238,22 +242,22 @@ class PlanServiceImplTest {
         assertEquals(500L, result.getMaxStorageGB());
 
         verify(planRepository).findById(3L);
+        verify(planMapper).toResponse(premiumPlan);
     }
 
     @Test
     void getAllPlans_VerifyMapperCalledForEachPlan() {
         // Given
         List<Plan> plans = Arrays.asList(freePlan, standardPlan);
+        List<PlanResponse> expectedResponses = Arrays.asList(freePlanResponse, standardPlanResponse);
         when(planRepository.findAll(any(Sort.class))).thenReturn(plans);
-        when(modelMapper.map(freePlan, PlanResponse.class)).thenReturn(freePlanResponse);
-        when(modelMapper.map(standardPlan, PlanResponse.class)).thenReturn(standardPlanResponse);
+        when(planMapper.toResponseList(plans)).thenReturn(expectedResponses);
 
         // When
         List<PlanResponse> result = planService.getAllPlans();
 
         // Then
         assertEquals(2, result.size());
-        verify(modelMapper).map(freePlan, PlanResponse.class);
-        verify(modelMapper).map(standardPlan, PlanResponse.class);
+        verify(planMapper).toResponseList(plans);
     }
 }

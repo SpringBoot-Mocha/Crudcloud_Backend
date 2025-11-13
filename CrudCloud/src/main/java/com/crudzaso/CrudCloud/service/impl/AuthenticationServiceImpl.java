@@ -50,7 +50,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         log.info("Login successful for email: {}", request.getEmail());
 
         // Build response
-        UserResponse userResponse = userMapper.toUserResponse(user);
+        UserResponse userResponse = userMapper.toResponse(user);
         return AuthResponse.builder()
                 .token(token)
                 .user(userResponse)

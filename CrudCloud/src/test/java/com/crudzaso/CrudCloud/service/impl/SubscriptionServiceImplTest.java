@@ -6,6 +6,7 @@ import com.crudzaso.CrudCloud.domain.entity.User;
 import com.crudzaso.CrudCloud.dto.request.CreateSubscriptionRequest;
 import com.crudzaso.CrudCloud.dto.response.SubscriptionResponse;
 import com.crudzaso.CrudCloud.exception.ResourceNotFoundException;
+import com.crudzaso.CrudCloud.mapper.SubscriptionMapper;
 import com.crudzaso.CrudCloud.repository.PlanRepository;
 import com.crudzaso.CrudCloud.repository.SubscriptionRepository;
 import com.crudzaso.CrudCloud.repository.UserRepository;
@@ -15,7 +16,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.modelmapper.ModelMapper;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -42,7 +42,7 @@ class SubscriptionServiceImplTest {
     private PlanRepository planRepository;
 
     @Mock
-    private ModelMapper modelMapper;
+    private SubscriptionMapper subscriptionMapper;
 
     @InjectMocks
     private SubscriptionServiceImpl subscriptionService;
@@ -50,6 +50,7 @@ class SubscriptionServiceImplTest {
     private User user;
     private Plan plan;
     private Subscription subscription;
+    private SubscriptionResponse subscriptionResponse;
     private CreateSubscriptionRequest createRequest;
 
     @BeforeEach
@@ -80,6 +81,14 @@ class SubscriptionServiceImplTest {
         createRequest = new CreateSubscriptionRequest();
         createRequest.setUserId(1L);
         createRequest.setPlanId(2L);
+
+        subscriptionResponse = SubscriptionResponse.builder()
+                .id(10L)
+                .userId(1L)
+                .planId(2L)
+                .planName("STANDARD")
+                .isActive(true)
+                .build();
     }
 
     @Test
@@ -88,6 +97,7 @@ class SubscriptionServiceImplTest {
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
         when(planRepository.findById(2L)).thenReturn(Optional.of(plan));
         when(subscriptionRepository.save(any(Subscription.class))).thenReturn(subscription);
+        when(subscriptionMapper.toResponse(subscription)).thenReturn(subscriptionResponse);
 
         // When
         SubscriptionResponse result = subscriptionService.createSubscription(createRequest);
@@ -103,6 +113,7 @@ class SubscriptionServiceImplTest {
         verify(userRepository).findById(1L);
         verify(planRepository).findById(2L);
         verify(subscriptionRepository).save(any(Subscription.class));
+        verify(subscriptionMapper).toResponse(subscription);
     }
 
     @Test
@@ -149,6 +160,7 @@ class SubscriptionServiceImplTest {
         // Given
         when(subscriptionRepository.findByUserIdAndIsActive(1L, true))
                 .thenReturn(Optional.of(subscription));
+        when(subscriptionMapper.toResponse(subscription)).thenReturn(subscriptionResponse);
 
         // When
         SubscriptionResponse result = subscriptionService.getUserSubscription(1L);
@@ -160,6 +172,7 @@ class SubscriptionServiceImplTest {
         assertEquals("STANDARD", result.getPlanName());
 
         verify(subscriptionRepository).findByUserIdAndIsActive(1L, true);
+        verify(subscriptionMapper).toResponse(subscription);
     }
 
     @Test
@@ -180,6 +193,7 @@ class SubscriptionServiceImplTest {
     void getSubscriptionById_Success() {
         // Given
         when(subscriptionRepository.findById(10L)).thenReturn(Optional.of(subscription));
+        when(subscriptionMapper.toResponse(subscription)).thenReturn(subscriptionResponse);
 
         // When
         SubscriptionResponse result = subscriptionService.getSubscriptionById(10L);
@@ -191,6 +205,7 @@ class SubscriptionServiceImplTest {
         assertEquals(2L, result.getPlanId());
 
         verify(subscriptionRepository).findById(10L);
+        verify(subscriptionMapper).toResponse(subscription);
     }
 
     @Test
@@ -219,11 +234,13 @@ class SubscriptionServiceImplTest {
             assertNotNull(sub.getStartDate());
             return subscription;
         });
+        when(subscriptionMapper.toResponse(subscription)).thenReturn(subscriptionResponse);
 
         // When
         subscriptionService.createSubscription(createRequest);
 
         // Then
         verify(subscriptionRepository).save(any(Subscription.class));
+        verify(subscriptionMapper).toResponse(subscription);
     }
 }

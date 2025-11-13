@@ -2,16 +2,15 @@ package com.crudzaso.CrudCloud.service.impl;
 
 import com.crudzaso.CrudCloud.dto.response.PlanResponse;
 import com.crudzaso.CrudCloud.exception.ResourceNotFoundException;
+import com.crudzaso.CrudCloud.mapper.PlanMapper;
 import com.crudzaso.CrudCloud.repository.PlanRepository;
 import com.crudzaso.CrudCloud.service.PlanService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.modelmapper.ModelMapper;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * Implementation of PlanService.
@@ -24,7 +23,7 @@ import java.util.stream.Collectors;
 public class PlanServiceImpl implements PlanService {
 
     private final PlanRepository planRepository;
-    private final ModelMapper modelMapper;
+    private final PlanMapper planMapper;
 
     /**
      * Get all available subscription plans ordered by price.
@@ -34,10 +33,7 @@ public class PlanServiceImpl implements PlanService {
     @Override
     public List<PlanResponse> getAllPlans() {
         log.info("Fetching all subscription plans");
-        return planRepository.findAll(Sort.by(Sort.Direction.ASC, "priceMonth"))
-                .stream()
-                .map(plan -> modelMapper.map(plan, PlanResponse.class))
-                .collect(Collectors.toList());
+        return planMapper.toResponseList(planRepository.findAll(Sort.by(Sort.Direction.ASC, "priceMonth")));
     }
 
     /**
@@ -51,7 +47,7 @@ public class PlanServiceImpl implements PlanService {
     public PlanResponse getPlanById(Long id) {
         log.info("Fetching plan with ID: {}", id);
         return planRepository.findById(id)
-                .map(plan -> modelMapper.map(plan, PlanResponse.class))
+                .map(planMapper::toResponse)
                 .orElseThrow(() -> new ResourceNotFoundException("Plan", "id", id));
     }
 }

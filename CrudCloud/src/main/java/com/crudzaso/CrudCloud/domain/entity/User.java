@@ -44,6 +44,7 @@ public class User {
      * Affects billing and feature availability
      */
     @Column(nullable = false)
+    @Builder.Default
     private Boolean isOrganization = false;
 
     /**
