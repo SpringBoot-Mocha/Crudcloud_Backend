@@ -1,12 +1,12 @@
 package com.crudzaso.CrudCloud.mapper;
 
+import com.crudzaso.CrudCloud.BaseIntegrationTest;
 import com.crudzaso.CrudCloud.domain.entity.User;
 import com.crudzaso.CrudCloud.dto.response.UserResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -15,10 +15,14 @@ import static org.junit.jupiter.api.Assertions.*;
  * Unit tests for UserMapper using Spring Boot Test
  * Tests the actual MapStruct implementation with Spring context
  * Specifically tests the id to userId field mapping
+ * 
+ * Extends BaseIntegrationTest for:
+ * - Automatic Spring Boot context loading
+ * - PostgreSQL database configuration (test profile)
+ * - Automatic transaction rollback after each test (data cleanup)
  */
 @ExtendWith(SpringExtension.class)
-@SpringBootTest
-class UserMapperTest {
+class UserMapperTest extends BaseIntegrationTest {
 
     @Autowired
     private UserMapper userMapper;

@@ -1,6 +1,7 @@
 package com.crudzaso.CrudCloud.repository;
 
 import com.crudzaso.CrudCloud.domain.entity.DatabaseInstance;
+import com.crudzaso.CrudCloud.domain.enums.InstanceStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -26,4 +27,13 @@ public interface DatabaseInstanceRepository extends JpaRepository<DatabaseInstan
      * @return List of database instances for the subscription
      */
     List<DatabaseInstance> findBySubscriptionId(Long subscriptionId);
+
+    /**
+     * Count database instances for a user excluding a specific status
+     * Used for plan limit validation
+     * @param userId the user ID
+     * @param status the status to exclude (e.g., DELETED)
+     * @return count of instances not in the specified status
+     */
+    int countByUserIdAndStatusNot(Long userId, InstanceStatus status);
 }

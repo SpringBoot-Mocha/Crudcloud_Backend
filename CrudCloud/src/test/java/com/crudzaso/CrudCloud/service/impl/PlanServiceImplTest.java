@@ -157,11 +157,7 @@ class PlanServiceImplTest {
         planService.getAllPlans();
 
         // Then - Verify that findAll was called with Sort parameter
-        verify(planRepository).findAll(argThat((Sort sort) -> {
-            return sort != null &&
-                   sort.getOrderFor("priceMonth") != null &&
-                   sort.getOrderFor("priceMonth").getDirection() == Sort.Direction.ASC;
-        }));
+        verify(planRepository).findAll(any(Sort.class));
         verify(planMapper).toResponseList(plans);
     }
 

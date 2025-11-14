@@ -43,4 +43,19 @@ public interface DatabaseInstanceService {
      * @throws ResourceNotFoundException if instance not found
      */
     DatabaseInstanceResponse updateInstanceStatus(Long id, InstanceStatus status);
+
+    /**
+     * Delete a database instance (soft delete)
+     * @param id the instance ID
+     * @throws ResourceNotFoundException if instance not found
+     */
+    void deleteInstance(Long id);
+
+    /**
+     * Rotate password for a database instance
+     * @param id the instance ID
+     * @return the instance response with new credentials
+     * @throws ResourceNotFoundException if instance not found
+     */
+    DatabaseInstanceResponse rotatePassword(Long id);
 }

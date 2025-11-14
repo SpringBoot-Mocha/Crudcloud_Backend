@@ -33,7 +33,7 @@ public class PlanServiceImpl implements PlanService {
     @Override
     public List<PlanResponse> getAllPlans() {
         log.info("Fetching all subscription plans");
-        return planMapper.toResponseList(planRepository.findAll(Sort.by(Sort.Direction.ASC, "priceMonth")));
+        return planMapper.toResponseList(planRepository.findAll(Sort.by(Sort.Direction.ASC, "pricePerMonth")));
     }
 
     /**

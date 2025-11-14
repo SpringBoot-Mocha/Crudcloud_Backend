@@ -1,5 +1,6 @@
 package com.crudzaso.CrudCloud.mapper;
 
+import com.crudzaso.CrudCloud.BaseIntegrationTest;
 import com.crudzaso.CrudCloud.domain.entity.DatabaseInstance;
 import com.crudzaso.CrudCloud.domain.entity.DatabaseEngine;
 import com.crudzaso.CrudCloud.domain.entity.User;
@@ -9,7 +10,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.time.LocalDateTime;
@@ -21,10 +21,14 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * Unit tests for DatabaseInstanceMapper using Spring Boot Test
  * Tests the actual MapStruct implementation with Spring context
+ * 
+ * Extends BaseIntegrationTest for:
+ * - Automatic Spring Boot context loading
+ * - PostgreSQL database configuration (test profile)
+ * - Automatic transaction rollback after each test (data cleanup)
  */
 @ExtendWith(SpringExtension.class)
-@SpringBootTest
-class DatabaseInstanceMapperTest {
+class DatabaseInstanceMapperTest extends BaseIntegrationTest {
 
     @Autowired
     private DatabaseInstanceMapper databaseInstanceMapper;

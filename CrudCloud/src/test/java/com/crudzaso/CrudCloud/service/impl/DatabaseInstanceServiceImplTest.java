@@ -2,16 +2,20 @@ package com.crudzaso.CrudCloud.service.impl;
 
 import com.crudzaso.CrudCloud.domain.entity.DatabaseEngine;
 import com.crudzaso.CrudCloud.domain.entity.DatabaseInstance;
+import com.crudzaso.CrudCloud.domain.entity.Plan;
 import com.crudzaso.CrudCloud.domain.entity.Subscription;
 import com.crudzaso.CrudCloud.domain.entity.User;
 import com.crudzaso.CrudCloud.domain.enums.InstanceStatus;
 import com.crudzaso.CrudCloud.dto.request.CreateInstanceRequest;
 import com.crudzaso.CrudCloud.dto.response.DatabaseInstanceResponse;
 import com.crudzaso.CrudCloud.exception.ResourceNotFoundException;
+import com.crudzaso.CrudCloud.repository.CredentialRepository;
 import com.crudzaso.CrudCloud.repository.DatabaseEngineRepository;
 import com.crudzaso.CrudCloud.repository.DatabaseInstanceRepository;
 import com.crudzaso.CrudCloud.repository.SubscriptionRepository;
 import com.crudzaso.CrudCloud.repository.UserRepository;
+import com.crudzaso.CrudCloud.service.CredentialEncryptionService;
+import com.crudzaso.CrudCloud.service.DatabaseProvisioningService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -49,12 +53,22 @@ class DatabaseInstanceServiceImplTest {
     private DatabaseEngineRepository databaseEngineRepository;
 
     @Mock
+    private CredentialRepository credentialRepository;
+
+    @Mock
     private DatabaseInstanceMapper databaseInstanceMapper;
+
+    @Mock
+    private DatabaseProvisioningService provisioningService;
+
+    @Mock
+    private CredentialEncryptionService encryptionService;
 
     @InjectMocks
     private DatabaseInstanceServiceImpl databaseInstanceService;
 
     private User user;
+    private Plan plan;
     private Subscription subscription;
     private DatabaseEngine postgresEngine;
     private DatabaseEngine mysqlEngine;
@@ -72,9 +86,16 @@ class DatabaseInstanceServiceImplTest {
                 .name("Test User")
                 .build();
 
+        plan = Plan.builder()
+                .id(1L)
+                .name("Basic Plan")
+                .maxInstances(5)
+                .build();
+
         subscription = Subscription.builder()
                 .id(10L)
                 .user(user)
+                .plan(plan)
                 .isActive(true)
                 .build();
 
@@ -135,13 +156,21 @@ class DatabaseInstanceServiceImplTest {
     }
 
     @Test
-    void createInstance_Success() {
+    void createInstance_Success() throws DatabaseProvisioningService.ProvisioningException {
         // Given
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
         when(subscriptionRepository.findById(10L)).thenReturn(Optional.of(subscription));
         when(databaseEngineRepository.findById(1L)).thenReturn(Optional.of(postgresEngine));
+        when(encryptionService.generateSecurePassword()).thenReturn("securePassword123");
         when(databaseInstanceRepository.save(any(DatabaseInstance.class))).thenReturn(postgresInstance);
         when(databaseInstanceMapper.toResponse(postgresInstance)).thenReturn(postgresInstanceResponse);
+        when(credentialRepository.save(any())).thenReturn(null); // Mock credential save
+
+        // Mock provisioning service to return a valid result
+        DatabaseProvisioningService.ProvisioningResult provisioningResult =
+            new DatabaseProvisioningService.ProvisioningResult("localhost", 5432, "testuser", "securePassword123", "db-1-abc12345");
+        when(provisioningService.provisionDatabase(any(DatabaseInstance.class), anyString(), anyString(), anyString()))
+            .thenReturn(provisioningResult);
 
         // When
         DatabaseInstanceResponse result = databaseInstanceService.createInstance(createRequest);
@@ -155,24 +184,36 @@ class DatabaseInstanceServiceImplTest {
         verify(userRepository).findById(1L);
         verify(subscriptionRepository).findById(10L);
         verify(databaseEngineRepository).findById(1L);
-        verify(databaseInstanceRepository).save(any(DatabaseInstance.class));
+        verify(databaseInstanceRepository, times(2)).save(any(DatabaseInstance.class));
         verify(databaseInstanceMapper).toResponse(postgresInstance);
+        verify(credentialRepository).save(any()); // Verify credential was saved
     }
 
     @Test
-    void createInstance_WithCustomInstanceName_Success() {
+    void createInstance_WithCustomInstanceName_Success() throws DatabaseProvisioningService.ProvisioningException {
         // Given
         createRequest.setInstanceName("my-custom-db");
 
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
         when(subscriptionRepository.findById(10L)).thenReturn(Optional.of(subscription));
         when(databaseEngineRepository.findById(1L)).thenReturn(Optional.of(postgresEngine));
+        when(encryptionService.generateSecurePassword()).thenReturn("securePassword123");
         when(databaseInstanceRepository.save(any(DatabaseInstance.class))).thenAnswer(invocation -> {
             DatabaseInstance instance = invocation.getArgument(0);
-            assertEquals("my-custom-db", instance.getContainerName());
+            // Check container name on first save (before provisioning)
+            if (instance.getStatus() == InstanceStatus.CREATING) {
+                assertEquals("my-custom-db", instance.getContainerName());
+            }
             return postgresInstance;
         });
         when(databaseInstanceMapper.toResponse(any(DatabaseInstance.class))).thenReturn(postgresInstanceResponse);
+        when(credentialRepository.save(any())).thenReturn(null); // Mock credential save
+
+        // Mock provisioning service
+        DatabaseProvisioningService.ProvisioningResult provisioningResult =
+            new DatabaseProvisioningService.ProvisioningResult("localhost", 5432, "testuser", "securePassword123", "my-custom-db");
+        when(provisioningService.provisionDatabase(any(DatabaseInstance.class), anyString(), anyString(), anyString()))
+            .thenReturn(provisioningResult);
 
         // When
         DatabaseInstanceResponse result = databaseInstanceService.createInstance(createRequest);
@@ -182,6 +223,7 @@ class DatabaseInstanceServiceImplTest {
         verify(databaseInstanceRepository).save(argThat(instance ->
             "my-custom-db".equals(instance.getContainerName())
         ));
+        verify(credentialRepository).save(any()); // Verify credential was saved
     }
 
     @Test
@@ -251,28 +293,40 @@ class DatabaseInstanceServiceImplTest {
     }
 
     @Test
-    void createInstance_SetsCorrectDefaultValues() {
+    void createInstance_SetsCorrectDefaultValues() throws DatabaseProvisioningService.ProvisioningException {
         // Given
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
         when(subscriptionRepository.findById(10L)).thenReturn(Optional.of(subscription));
         when(databaseEngineRepository.findById(1L)).thenReturn(Optional.of(postgresEngine));
+        when(encryptionService.generateSecurePassword()).thenReturn("securePassword123");
         when(databaseInstanceRepository.save(any(DatabaseInstance.class))).thenAnswer(invocation -> {
             DatabaseInstance instance = invocation.getArgument(0);
             assertEquals(user, instance.getUser());
             assertEquals(subscription, instance.getSubscription());
             assertEquals(postgresEngine, instance.getDatabaseEngine());
-            assertEquals("localhost", instance.getHost());
-            assertEquals(5432, instance.getPort());
-            assertEquals(InstanceStatus.CREATING, instance.getStatus());
+            // Check values on first save (before provisioning)
+            if (instance.getStatus() == InstanceStatus.CREATING) {
+                assertEquals("localhost", instance.getHost());
+                assertEquals(5432, instance.getPort());
+                assertEquals(InstanceStatus.CREATING, instance.getStatus());
+            }
             return postgresInstance;
         });
         when(databaseInstanceMapper.toResponse(any(DatabaseInstance.class))).thenReturn(postgresInstanceResponse);
+        when(credentialRepository.save(any())).thenReturn(null); // Mock credential save
+
+        // Mock provisioning service
+        DatabaseProvisioningService.ProvisioningResult provisioningResult =
+            new DatabaseProvisioningService.ProvisioningResult("localhost", 5432, "testuser", "securePassword123", "db-1-abc12345");
+        when(provisioningService.provisionDatabase(any(DatabaseInstance.class), anyString(), anyString(), anyString()))
+            .thenReturn(provisioningResult);
 
         // When
         databaseInstanceService.createInstance(createRequest);
 
         // Then
-        verify(databaseInstanceRepository).save(any(DatabaseInstance.class));
+        verify(databaseInstanceRepository, times(2)).save(any(DatabaseInstance.class));
+        verify(credentialRepository).save(any()); // Verify credential was saved
     }
 
     @Test

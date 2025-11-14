@@ -1,12 +1,12 @@
 package com.crudzaso.CrudCloud.mapper;
 
+import com.crudzaso.CrudCloud.BaseIntegrationTest;
 import com.crudzaso.CrudCloud.domain.entity.Plan;
 import com.crudzaso.CrudCloud.dto.response.PlanResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.math.BigDecimal;
@@ -19,10 +19,14 @@ import static org.junit.jupiter.api.Assertions.*;
  * Unit tests for PlanMapper using Spring Boot Test
  * Tests the actual MapStruct implementation with Spring context
  * Specifically tests the pricePerMonth to priceMonth field mapping
+ * 
+ * Extends BaseIntegrationTest for:
+ * - Automatic Spring Boot context loading
+ * - PostgreSQL database configuration (test profile)
+ * - Automatic transaction rollback after each test (data cleanup)
  */
 @ExtendWith(SpringExtension.class)
-@SpringBootTest
-class PlanMapperTest {
+class PlanMapperTest extends BaseIntegrationTest {
 
     @Autowired
     private PlanMapper planMapper;

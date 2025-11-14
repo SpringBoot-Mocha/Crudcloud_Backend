@@ -1,5 +1,6 @@
 package com.crudzaso.CrudCloud.mapper;
 
+import com.crudzaso.CrudCloud.BaseIntegrationTest;
 import com.crudzaso.CrudCloud.domain.entity.Plan;
 import com.crudzaso.CrudCloud.domain.entity.Subscription;
 import com.crudzaso.CrudCloud.domain.entity.User;
@@ -8,7 +9,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.math.BigDecimal;
@@ -25,10 +25,14 @@ import static org.junit.jupiter.api.Assertions.*;
  * - user.id → userId
  * - plan.id → planId
  * - plan.name → planName
+ * 
+ * Extends BaseIntegrationTest for:
+ * - Automatic Spring Boot context loading
+ * - PostgreSQL database configuration (test profile)
+ * - Automatic transaction rollback after each test (data cleanup)
  */
 @ExtendWith(SpringExtension.class)
-@SpringBootTest
-class SubscriptionMapperTest {
+class SubscriptionMapperTest extends BaseIntegrationTest {
 
     @Autowired
     private SubscriptionMapper subscriptionMapper;

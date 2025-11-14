@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -31,6 +32,20 @@ import org.springframework.web.bind.annotation.RestController;
 public class UserController {
 
     private final UserService userService;
+
+    /**
+     * Get authenticated user's profile.
+     *
+     * @return authenticated user's profile details
+     */
+    @GetMapping("/profile")
+    @Operation(summary = "Get user profile", description = "Retrieves the authenticated user's profile information")
+    public ResponseEntity<UserResponse> getProfile() {
+        String userEmail = SecurityContextHolder.getContext().getAuthentication().getName();
+        log.info("Getting profile for user: {}", userEmail);
+        UserResponse response = userService.getUserByEmail(userEmail);
+        return ResponseEntity.ok(response);
+    }
 
     /**
      * Get user details by ID.

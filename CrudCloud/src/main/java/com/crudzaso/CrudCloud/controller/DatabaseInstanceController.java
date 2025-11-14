@@ -1,8 +1,13 @@
 package com.crudzaso.CrudCloud.controller;
 
+import com.crudzaso.CrudCloud.domain.enums.InstanceStatus;
+import com.crudzaso.CrudCloud.domain.enums.LogLevel;
 import com.crudzaso.CrudCloud.dto.request.CreateInstanceRequest;
 import com.crudzaso.CrudCloud.dto.response.DatabaseInstanceResponse;
+import com.crudzaso.CrudCloud.dto.response.InstanceLogResponse;
+import com.crudzaso.CrudCloud.dto.response.InstanceStatsResponse;
 import com.crudzaso.CrudCloud.service.DatabaseInstanceService;
+import com.crudzaso.CrudCloud.service.InstanceMonitoringService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -14,6 +19,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -35,6 +41,7 @@ import java.util.List;
 public class DatabaseInstanceController {
 
     private final DatabaseInstanceService databaseInstanceService;
+    private final InstanceMonitoringService monitoringService;
 
     /**
      * Create a new database instance.
@@ -89,7 +96,120 @@ public class DatabaseInstanceController {
     @Operation(summary = "Delete instance", description = "Deletes a database instance")
     public ResponseEntity<Void> deleteInstance(@PathVariable Long id) {
         log.info("Deleting database instance with ID: {}", id);
-        // Implementation will depend on service layer delete capability
+        databaseInstanceService.deleteInstance(id);
         return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * Suspend a database instance (pause it).
+     *
+     * @param id the instance ID to suspend
+     * @return updated instance response
+     */
+    @PutMapping("/{id}/suspend")
+    @Operation(summary = "Suspend instance", description = "Suspends (pauses) a database instance")
+    public ResponseEntity<DatabaseInstanceResponse> suspendInstance(@PathVariable Long id) {
+        log.info("Suspending database instance with ID: {}", id);
+        DatabaseInstanceResponse response = databaseInstanceService.updateInstanceStatus(id, InstanceStatus.SUSPENDED);
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Resume a database instance (bring it back online).
+     *
+     * @param id the instance ID to resume
+     * @return updated instance response
+     */
+    @PutMapping("/{id}/resume")
+    @Operation(summary = "Resume instance", description = "Resumes a suspended database instance")
+    public ResponseEntity<DatabaseInstanceResponse> resumeInstance(@PathVariable Long id) {
+        log.info("Resuming database instance with ID: {}", id);
+        DatabaseInstanceResponse response = databaseInstanceService.updateInstanceStatus(id, InstanceStatus.RUNNING);
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Rotate the password for a database instance.
+     *
+     * @param id the instance ID
+     * @return updated instance response
+     */
+    @PostMapping("/{id}/rotate-password")
+    @Operation(summary = "Rotate password", description = "Generates a new password for the database instance")
+    public ResponseEntity<DatabaseInstanceResponse> rotatePassword(@PathVariable Long id) {
+        log.info("Rotating password for database instance with ID: {}", id);
+        DatabaseInstanceResponse response = databaseInstanceService.rotatePassword(id);
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Get all statistics for a database instance.
+     *
+     * @param id the instance ID
+     * @return list of instance statistics
+     */
+    @GetMapping("/{id}/stats")
+    @Operation(summary = "Get instance stats", description = "Retrieves all statistics for a database instance")
+    public ResponseEntity<List<InstanceStatsResponse>> getInstanceStats(@PathVariable Long id) {
+        log.info("Getting stats for database instance with ID: {}", id);
+        List<InstanceStatsResponse> stats = monitoringService.getInstanceStats(id);
+        return ResponseEntity.ok(stats);
+    }
+
+    /**
+     * Get the latest statistics for a database instance.
+     *
+     * @param id the instance ID
+     * @return latest instance statistics
+     */
+    @GetMapping("/{id}/stats/latest")
+    @Operation(summary = "Get latest stats", description = "Retrieves the latest statistics for a database instance")
+    public ResponseEntity<InstanceStatsResponse> getLatestStats(@PathVariable Long id) {
+        log.info("Getting latest stats for database instance with ID: {}", id);
+        InstanceStatsResponse stats = monitoringService.getLatestStats(id);
+        return ResponseEntity.ok(stats);
+    }
+
+    /**
+     * Get all logs for a database instance.
+     *
+     * @param id the instance ID
+     * @return list of instance logs
+     */
+    @GetMapping("/{id}/logs")
+    @Operation(summary = "Get instance logs", description = "Retrieves all logs for a database instance")
+    public ResponseEntity<List<InstanceLogResponse>> getInstanceLogs(@PathVariable Long id) {
+        log.info("Getting logs for database instance with ID: {}", id);
+        List<InstanceLogResponse> logs = monitoringService.getInstanceLogs(id);
+        return ResponseEntity.ok(logs);
+    }
+
+    /**
+     * Get logs filtered by level (INFO, ERROR, WARNING, etc.).
+     *
+     * @param id the instance ID
+     * @param level the log level to filter by
+     * @return list of filtered logs
+     */
+    @GetMapping("/{id}/logs/level/{level}")
+    @Operation(summary = "Get logs by level", description = "Retrieves logs filtered by level (INFO, ERROR, WARNING, etc.)")
+    public ResponseEntity<List<InstanceLogResponse>> getLogsByLevel(@PathVariable Long id, @PathVariable LogLevel level) {
+        log.info("Getting {} logs for database instance with ID: {}", level, id);
+        List<InstanceLogResponse> logs = monitoringService.getLogsByLevel(id, level);
+        return ResponseEntity.ok(logs);
+    }
+
+    /**
+     * Get error logs for troubleshooting.
+     *
+     * @param id the instance ID
+     * @return list of error/warning logs
+     */
+    @GetMapping("/{id}/logs/errors")
+    @Operation(summary = "Get error logs", description = "Retrieves error and warning logs for a database instance")
+    public ResponseEntity<List<InstanceLogResponse>> getErrorLogs(@PathVariable Long id) {
+        log.info("Getting error logs for database instance with ID: {}", id);
+        List<InstanceLogResponse> logs = monitoringService.getErrorLogs(id);
+        return ResponseEntity.ok(logs);
     }
 }
