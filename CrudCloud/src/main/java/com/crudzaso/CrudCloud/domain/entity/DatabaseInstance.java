@@ -12,15 +12,15 @@ import java.time.LocalDateTime;
 /**
  * DatabaseInstance entity representing a user's running database instance
  *
- * Maps to the 'database_instances' table and represents actual database
+ * Maps to the 'instance_stats' table and represents actual database
  * instances running in Docker containers. Tracks status, connection details,
  * and relationships to users and their subscriptions.
  */
 @Entity
-@Table(name = "database_instances", indexes = {
-        @Index(name = "idx_database_instances_user_id", columnList = "user_id"),
-        @Index(name = "idx_database_instances_subscription_id", columnList = "subscription_id"),
-        @Index(name = "idx_database_instances_status", columnList = "status")
+@Table(name = "instance_stats", indexes = {
+        @Index(name = "idx_instance_stats_user_id", columnList = "user_id"),
+        @Index(name = "idx_instance_stats_subscription_id", columnList = "subscription_id"),
+        @Index(name = "idx_instance_stats_status", columnList = "status")
 })
 @Data
 @NoArgsConstructor
@@ -77,10 +77,10 @@ public class DatabaseInstance {
     @Enumerated(EnumType.STRING)
     private InstanceStatus status;
 
-    @Column(nullable = false, updatable = false)
+    @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    @Column(nullable = false)
+    @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
     /**

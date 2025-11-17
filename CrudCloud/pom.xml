@@ -30,7 +30,7 @@
 		<java.version>21</java.version>
 		<jacoco.version>0.8.12</jacoco.version>
 		<!-- Updated Flyway to support PostgreSQL 18 -->
-		<flyway.version>11.1.0</flyway.version>
+		<flyway.version>11.2.0</flyway.version>
 	</properties>
 	<dependencies>
 		<dependency>
@@ -163,6 +163,26 @@
 	<dependency>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-mail</artifactId>
+	</dependency>
+
+	<!-- Spring Security OAuth2 Client para autenticacion con Google -->
+	<dependency>
+		<groupId>org.springframework.boot</groupId>
+		<artifactId>spring-boot-starter-oauth2-client</artifactId>
+	</dependency>
+
+	<!-- Google API Client para validar tokens de Google -->
+	<dependency>
+		<groupId>com.google.api-client</groupId>
+		<artifactId>google-api-client</artifactId>
+		<version>2.7.0</version>
+	</dependency>
+
+	<!-- GitHub API Client para autenticacion con GitHub -->
+	<dependency>
+		<groupId>org.kohsuke</groupId>
+		<artifactId>github-api</artifactId>
+		<version>1.321</version>
 	</dependency>
 	</dependencies>
 

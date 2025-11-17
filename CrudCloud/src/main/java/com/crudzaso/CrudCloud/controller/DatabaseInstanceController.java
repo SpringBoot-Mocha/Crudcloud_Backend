@@ -1,11 +1,13 @@
 package com.crudzaso.CrudCloud.controller;
 
+import com.crudzaso.CrudCloud.domain.entity.User;
 import com.crudzaso.CrudCloud.domain.enums.InstanceStatus;
 import com.crudzaso.CrudCloud.domain.enums.LogLevel;
 import com.crudzaso.CrudCloud.dto.request.CreateInstanceRequest;
 import com.crudzaso.CrudCloud.dto.response.DatabaseInstanceResponse;
 import com.crudzaso.CrudCloud.dto.response.InstanceLogResponse;
 import com.crudzaso.CrudCloud.dto.response.InstanceStatsResponse;
+import com.crudzaso.CrudCloud.repository.UserRepository;
 import com.crudzaso.CrudCloud.service.DatabaseInstanceService;
 import com.crudzaso.CrudCloud.service.InstanceMonitoringService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -15,6 +17,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -42,6 +45,7 @@ public class DatabaseInstanceController {
 
     private final DatabaseInstanceService databaseInstanceService;
     private final InstanceMonitoringService monitoringService;
+    private final UserRepository userRepository;
 
     /**
      * Create a new database instance.
@@ -81,7 +85,16 @@ public class DatabaseInstanceController {
     @Operation(summary = "List user instances", description = "Retrieves all database instances for the authenticated user")
     public ResponseEntity<List<DatabaseInstanceResponse>> getUserInstances(
             @RequestParam(required = false) Long userId) {
-        log.info("Getting database instances for user: {}", userId);
+        // If userId is not provided, get it from the authenticated user
+        if (userId == null) {
+            String userEmail = SecurityContextHolder.getContext().getAuthentication().getName();
+            User user = userRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new RuntimeException("User not found: " + userEmail));
+            userId = user.getId();
+            log.info("Getting database instances for authenticated user: {} (ID: {})", userEmail, userId);
+        } else {
+            log.info("Getting database instances for user ID: {}", userId);
+        }
         List<DatabaseInstanceResponse> response = databaseInstanceService.getUserInstances(userId);
         return ResponseEntity.ok(response);
     }
