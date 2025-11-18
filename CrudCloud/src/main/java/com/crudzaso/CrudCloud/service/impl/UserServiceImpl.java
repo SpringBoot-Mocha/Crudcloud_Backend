@@ -39,10 +39,17 @@ public class UserServiceImpl implements UserService {
         }
 
         // Create and save user entity
+        // Parse name into first and last name
+        String[] nameParts = request.getName().trim().split("\\s+", 2);
+        String firstName = nameParts[0];
+        String lastName = nameParts.length > 1 ? nameParts[1] : "";
+
         User user = User.builder()
                 .email(request.getEmail())
                 .passwordHash(passwordEncoder.encode(request.getPassword()))
                 .name(request.getName())
+                .firstName(firstName)
+                .lastName(lastName)
                 .isOrganization(request.getIsOrganization())
                 .build();
 

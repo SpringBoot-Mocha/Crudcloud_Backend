@@ -46,10 +46,14 @@ public class AuthController {
      * @param request user registration details
      * @return created user response with 201 status
      */
-    @PostMapping("/register")
+    @PostMapping({"/register", "/register1"})  // Acepta ambos endpoints
     @Operation(summary = "Register new user", description = "Creates a new user account with email and password")
     public ResponseEntity<UserResponse> register(@Valid @RequestBody CreateUserRequest request) {
-        log.info("Register endpoint called for email: {}", request.getEmail());
+        log.info("Register endpoint called - Email: {}, Name: '{}', Password: {}, IsOrg: {}", 
+                 request.getEmail(), 
+                 request.getName(), 
+                 request.getPassword() != null ? "PROVIDED" : "NULL",
+                 request.getIsOrganization());
         UserResponse response = userService.createUser(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
@@ -60,7 +64,7 @@ public class AuthController {
      * @param request login credentials
      * @return authentication response with JWT token
      */
-    @PostMapping("/login")
+    @PostMapping({"/login", "/login1"})  // Acepta ambos endpoints
     @Operation(summary = "User login", description = "Authenticates user and returns JWT token")
     public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
         log.info("Login endpoint called for email: {}", request.getEmail());

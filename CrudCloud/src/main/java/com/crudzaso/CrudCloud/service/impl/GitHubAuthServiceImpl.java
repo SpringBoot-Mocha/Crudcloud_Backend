@@ -188,9 +188,23 @@ public class GitHubAuthServiceImpl implements GitHubAuthService {
     private User createGitHubUser(String email, String name) {
         log.debug("Creating new user from GitHub: {} ({})", name, email);
         
+        // Parse name into first and last name
+        String firstName = "";
+        String lastName = "";
+        if (name != null && !name.isEmpty()) {
+            String[] nameParts = name.trim().split("\\s+", 2);
+            firstName = nameParts[0];
+            lastName = nameParts.length > 1 ? nameParts[1] : "";
+        } else {
+            firstName = email.split("@")[0];
+            lastName = "";
+        }
+        
         User user = User.builder()
                 .email(email)
                 .name(name)
+                .firstName(firstName)
+                .lastName(lastName)
                 .passwordHash(passwordEncoder.encode(UUID.randomUUID().toString()))
                 .isOrganization(false)
                 .createdAt(LocalDateTime.now())

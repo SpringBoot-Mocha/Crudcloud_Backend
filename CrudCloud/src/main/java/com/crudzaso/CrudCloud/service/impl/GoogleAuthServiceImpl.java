@@ -129,9 +129,24 @@ public class GoogleAuthServiceImpl implements GoogleAuthService {
         String randomPassword = UUID.randomUUID().toString();
         String encodedPassword = passwordEncoder.encode(randomPassword);
 
+        // Parse name into first and last name
+        String firstName = "";
+        String lastName = "";
+        if (name != null && !name.isEmpty()) {
+            String[] nameParts = name.trim().split("\\s+", 2);
+            firstName = nameParts[0];
+            lastName = nameParts.length > 1 ? nameParts[1] : "";
+        } else {
+            // Use email username as fallback
+            firstName = email.split("@")[0];
+            lastName = "";
+        }
+
         User user = User.builder()
                 .email(email)
                 .name(name != null ? name : email.split("@")[0])
+                .firstName(firstName)
+                .lastName(lastName)
                 .passwordHash(encodedPassword)
                 .isOrganization(false)
                 .build();
