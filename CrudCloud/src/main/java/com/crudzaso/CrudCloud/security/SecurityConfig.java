@@ -76,7 +76,9 @@ public class SecurityConfig {
         configuration.setAllowedOrigins(Arrays.asList(
             "http://localhost:3000",
             "http://localhost:4200",
-            "http://localhost:5173"
+            "http://localhost:5173",
+            "http://mocha.crudzaso.com",
+            "https://mocha.crudzaso.com"
         ));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("*"));
