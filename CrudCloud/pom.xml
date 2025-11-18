@@ -196,6 +196,26 @@
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-webflux</artifactId>
 	</dependency>
+
+	<!-- Thymeleaf para templates HTML de emails -->
+	<dependency>
+		<groupId>org.springframework.boot</groupId>
+		<artifactId>spring-boot-starter-thymeleaf</artifactId>
+	</dependency>
+
+	<!-- iText para generar PDF con credenciales -->
+	<dependency>
+		<groupId>com.itextpdf</groupId>
+		<artifactId>itextpdf</artifactId>
+		<version>5.5.13</version>
+	</dependency>
+
+	<!-- Jakarta Mail API (incluido en spring-boot-starter-mail pero explícito) -->
+	<dependency>
+		<groupId>jakarta.mail</groupId>
+		<artifactId>jakarta.mail-api</artifactId>
+		<version>2.1.2</version>
+	</dependency>
 	</dependencies>
 
 	<build>
