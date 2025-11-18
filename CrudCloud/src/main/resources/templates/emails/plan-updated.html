@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .header {
+            background: linear-gradient(135deg, #4CAF50 0%, #388E3C 100%);
+            color: white;
+            padding: 40px 20px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 28px;
+            font-weight: 600;
+        }
+        .content {
+            padding: 30px;
+        }
+        .plan-box {
+            background: #f1f8e9;
+            border-left: 4px solid #4CAF50;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .plan-name {
+            font-size: 24px;
+            font-weight: bold;
+            color: #2E7D32;
+            margin-bottom: 15px;
+        }
+        .feature {
+            display: flex;
+            align-items: center;
+            margin: 10px 0;
+            font-size: 16px;
+        }
+        .feature-icon {
+            color: #4CAF50;
+            margin-right: 10px;
+            font-weight: bold;
+        }
+        .footer {
+            background: #f9f9f9;
+            padding: 20px;
+            text-align: center;
+            font-size: 12px;
+            color: #666;
+            border-top: 1px solid #eee;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📊 Plan actualizado</h1>
+        </div>
+        
+        <div class="content">
+            <p>Hola <strong th:text="${userName}">Usuario</strong>,</p>
+            
+            <p>¡Felicidades! Tu pago ha sido confirmado y tu plan ha sido actualizado exitosamente.</p>
+            
+            <div class="plan-box">
+                <div class="plan-name" th:text="${newPlanName}">Premium</div>
+                
+                <div class="feature">
+                    <span class="feature-icon">✓</span>
+                    <span>Hasta <strong th:text="${maxInstances}">10</strong> instancias simultáneas</span>
+                </div>
+                
+                <div class="feature">
+                    <span class="feature-icon">✓</span>
+                    <span><strong th:text="${storageMB}">1000</strong> MB de almacenamiento</span>
+                </div>
+                
+                <div class="feature">
+                    <span class="feature-icon">✓</span>
+                    <span>Soporte prioritario</span>
+                </div>
+            </div>
+            
+            <p><strong>Valor pagado:</strong> <code th:text="${price}">$29,990 COP</code></p>
+            
+            <p>Ya puedes disfrutar de todos los beneficios de tu nuevo plan. Crea nuevas instancias en tu dashboard.</p>
+            
+            <p style="font-size: 14px; color: #666; margin-top: 30px;">
+                Si tienes alguna pregunta sobre tu suscripción, contacta a support@crudcloud.com
+            </p>
+        </div>
+        
+        <div class="footer">
+            <p>CrudCloud - Gestión de Bases de Datos en la Nube</p>
+            <p style="margin: 0;">© 2025 Crudzaso. Todos los derechos reservados.</p>
+        </div>
+    </div>
+</body>
+</html>

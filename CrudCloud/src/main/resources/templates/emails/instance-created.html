@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f5f5;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .header {
+            background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);
+            color: white;
+            padding: 40px 20px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 28px;
+            font-weight: 600;
+        }
+        .content {
+            padding: 30px;
+        }
+        .credentials-box {
+            background: #f0f7ff;
+            border-left: 4px solid #2196F3;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+        }
+        .credential-item {
+            margin: 10px 0;
+            display: flex;
+            align-items: center;
+        }
+        .credential-label {
+            font-weight: bold;
+            color: #333;
+            width: 120px;
+        }
+        .credential-value {
+            background: white;
+            padding: 8px 12px;
+            border-radius: 4px;
+            color: #1976D2;
+            word-break: break-all;
+            flex: 1;
+        }
+        .warning-box {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+            color: #856404;
+            font-size: 14px;
+        }
+        .button {
+            display: inline-block;
+            background: #2196F3;
+            color: white;
+            padding: 12px 30px;
+            text-decoration: none;
+            border-radius: 4px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        .footer {
+            background: #f9f9f9;
+            padding: 20px;
+            text-align: center;
+            font-size: 12px;
+            color: #666;
+            border-top: 1px solid #eee;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 Tu instancia está lista</h1>
+        </div>
+        
+        <div class="content">
+            <p>Hola <strong th:text="${userName}">Usuario</strong>,</p>
+            
+            <p>Tu instancia de <strong th:text="${databaseEngine}">Motor</strong> ha sido creada exitosamente y ya está en línea.</p>
+            
+            <p><strong>Nombre de la instancia:</strong> <code th:text="${instanceName}">myinstance</code></p>
+            
+            <div class="credentials-box">
+                <h3 style="margin-top: 0; color: #1976D2;">Credenciales de acceso</h3>
+                
+                <div class="credential-item">
+                    <span class="credential-label">Host:</span>
+                    <span class="credential-value" th:text="${host}">localhost</span>
+                </div>
+                
+                <div class="credential-item">
+                    <span class="credential-label">Puerto:</span>
+                    <span class="credential-value" th:text="${port}">5432</span>
+                </div>
+                
+                <div class="credential-item">
+                    <span class="credential-label">BD:</span>
+                    <span class="credential-value" th:text="${databaseName}">mydb</span>
+                </div>
+                
+                <div class="credential-item">
+                    <span class="credential-label">Usuario:</span>
+                    <span class="credential-value" th:text="${username}">admin</span>
+                </div>
+            </div>
+            
+            <div class="warning-box">
+                <strong>⚠️ Nota importante:</strong> Tu contraseña fue mostrada <strong>una sola vez</strong> al crear la instancia. 
+                Si la perdiste, puedes generar una nueva usando la opción "Rotar contraseña" en tu dashboard.
+            </div>
+            
+            <p>Puedes conectarte desde cualquier herramienta compatible (pgAdmin, DBeaver, MySQL Workbench, etc.).</p>
+            
+            <p style="font-size: 14px; color: #666;">
+                ¿Preguntas? Consulta nuestra documentación o contacta a support@crudcloud.com
+            </p>
+        </div>
+        
+        <div class="footer">
+            <p>CrudCloud - Gestión de Bases de Datos en la Nube</p>
+            <p style="margin: 0;">© 2025 Crudzaso. Todos los derechos reservados.</p>
+        </div>
+    </div>
+</body>
+</html>
