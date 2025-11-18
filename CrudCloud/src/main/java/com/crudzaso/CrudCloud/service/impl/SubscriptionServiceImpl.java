@@ -10,6 +10,7 @@ import com.crudzaso.CrudCloud.repository.PlanRepository;
 import com.crudzaso.CrudCloud.repository.SubscriptionRepository;
 import com.crudzaso.CrudCloud.repository.UserRepository;
 import com.crudzaso.CrudCloud.service.SubscriptionService;
+import com.crudzaso.CrudCloud.service.EmailService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import com.crudzaso.CrudCloud.mapper.SubscriptionMapper;
@@ -29,6 +30,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     private final UserRepository userRepository;
     private final PlanRepository planRepository;
     private final SubscriptionMapper subscriptionMapper;
+    private final EmailService emailService;
 
     @Override
     public SubscriptionResponse createSubscription(CreateSubscriptionRequest request) {
@@ -76,6 +78,55 @@ public class SubscriptionServiceImpl implements SubscriptionService {
                 .orElseThrow(() -> new ResourceNotFoundException("Subscription", id));
 
         return subscriptionMapper.toResponse(subscription);
+    }
+
+    @Override
+    public SubscriptionResponse updatePlan(Long userId, Long newPlanId) {
+        log.info("Updating subscription plan for user ID: {} to plan ID: {}", userId, newPlanId);
+
+        // Validate user exists
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User", userId));
+
+        // Validate new plan exists
+        Plan newPlan = planRepository.findById(newPlanId)
+                .orElseThrow(() -> new ResourceNotFoundException("Plan", newPlanId));
+
+        // Get current subscription
+        Subscription subscription = subscriptionRepository.findByUserIdAndIsActive(userId, true)
+                .orElseThrow(() -> new ResourceNotFoundException("Subscription", userId));
+
+        // Store old plan for logging
+        Plan oldPlan = subscription.getPlan();
+
+        // Update plan
+        subscription.setPlan(newPlan);
+        Subscription updatedSubscription = subscriptionRepository.save(subscription);
+
+        log.info("✅ Subscription updated successfully. User: {}, Old Plan: {}, New Plan: {}",
+                user.getEmail(), oldPlan.getName(), newPlan.getName());
+
+        // Send automatic email notification about plan change
+        try {
+            String userName = user.getFirstName() + " " + user.getLastName();
+            Integer storageMB = (int) (newPlan.getMaxStorageGB() * 1024); // Convert GB to MB
+            String price = newPlan.getPricePerMonth().toString();
+
+            emailService.notifyPlanChanged(
+                    user.getEmail(),
+                    userName,
+                    newPlan.getName(),
+                    newPlan.getMaxInstances(),
+                    storageMB,
+                    price
+            );
+            log.info("✅ Plan change notification email sent to: {}", user.getEmail());
+        } catch (Exception e) {
+            log.error("⚠️ Failed to send plan change notification email to {}: {}", user.getEmail(), e.getMessage());
+            // Don't throw exception - plan was updated successfully, email failure is non-critical
+        }
+
+        return subscriptionMapper.toResponse(updatedSubscription);
     }
 
 }

@@ -32,4 +32,14 @@ public interface SubscriptionService {
      * @throws ResourceNotFoundException if subscription not found
      */
     SubscriptionResponse getSubscriptionById(Long id);
+
+    /**
+     * Update the plan for a user's subscription
+     * Sends automatic email notification about plan change
+     * @param userId the user ID
+     * @param newPlanId the new plan ID
+     * @return the updated subscription response
+     * @throws ResourceNotFoundException if user or plan not found
+     */
+    SubscriptionResponse updatePlan(Long userId, Long newPlanId);
 }
