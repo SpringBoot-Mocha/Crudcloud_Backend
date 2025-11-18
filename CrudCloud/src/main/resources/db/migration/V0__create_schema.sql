@@ -37,7 +37,7 @@ CREATE TABLE IF NOT EXISTS plans (
     id BIGSERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL UNIQUE,
     max_instances INTEGER NOT NULL,
-    max_storage_gb BIGINT NOT NULL,
+    max_storage_mb BIGINT NOT NULL,
     price_per_month NUMERIC(10, 2) NOT NULL,
     description TEXT
 );
