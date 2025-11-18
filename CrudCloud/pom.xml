@@ -164,6 +164,38 @@
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-mail</artifactId>
 	</dependency>
+
+	<!-- OAuth2 Core para validación de tokens -->
+	<dependency>
+		<groupId>org.springframework.security</groupId>
+		<artifactId>spring-security-oauth2-core</artifactId>
+	</dependency>
+
+	<!-- OAuth2 JOSE para JWT parsing y validación -->
+	<dependency>
+		<groupId>org.springframework.security</groupId>
+		<artifactId>spring-security-oauth2-jose</artifactId>
+	</dependency>
+
+	<!-- Google Auth Library para validar tokens de Google -->
+	<dependency>
+		<groupId>com.google.auth</groupId>
+		<artifactId>google-auth-library-oauth2-http</artifactId>
+		<version>1.11.0</version>
+	</dependency>
+
+	<!-- Google API Client para llamadas a APIs de Google -->
+	<dependency>
+		<groupId>com.google.api-client</groupId>
+		<artifactId>google-api-client</artifactId>
+		<version>1.35.2</version>
+	</dependency>
+
+	<!-- RestTemplate para HTTP requests a GitHub API -->
+	<dependency>
+		<groupId>org.springframework.boot</groupId>
+		<artifactId>spring-boot-starter-webflux</artifactId>
+	</dependency>
 	</dependencies>
 
 	<build>

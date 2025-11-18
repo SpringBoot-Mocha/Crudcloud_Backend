@@ -60,9 +60,9 @@ class PaymentServiceImplTest {
         testUser = User.builder()
                 .id(1L)
                 .email("test@example.com")
-                .name("Test User")
+                .firstName("Test")
+                .lastName("User")
                 .passwordHash("hashed_password")
-                .isOrganization(false)
                 .build();
 
         testTransaction = Transaction.builder()

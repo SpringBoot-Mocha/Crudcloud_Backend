@@ -59,15 +59,15 @@ class AuthenticationServiceImplTest {
                 .id(1L)
                 .email("test@example.com")
                 .passwordHash("$2a$10$hashedPassword")
-                .name("Test User")
-                .isOrganization(false)
+                .firstName("Test")
+                .lastName("User")
                 .build();
 
         userResponse = new UserResponse();
         userResponse.setUserId(1L);
         userResponse.setEmail("test@example.com");
-        userResponse.setName("Test User");
-        userResponse.setIsOrganization(false);
+        userResponse.setFirstName("Test");
+        userResponse.setLastName("User");
     }
 
     @Test
@@ -173,7 +173,8 @@ class AuthenticationServiceImplTest {
         assertNotNull(result.getUser());
         assertEquals(1L, result.getUser().getUserId());
         assertEquals("test@example.com", result.getUser().getEmail());
-        assertEquals("Test User", result.getUser().getName());
+        assertEquals("Test", result.getUser().getFirstName());
+        assertEquals("User", result.getUser().getLastName());
 
         verify(userMapper).toResponse(user);
     }

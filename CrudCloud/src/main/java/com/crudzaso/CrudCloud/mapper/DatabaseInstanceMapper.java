@@ -19,13 +19,16 @@ public interface DatabaseInstanceMapper {
     /**
      * Map DatabaseInstance entity to DatabaseInstanceResponse DTO
      * Maps relationships to their IDs
+     * Note: username and password must be populated separately as they are not in the DatabaseInstance entity
      *
      * @param databaseInstance the database instance entity to map
      * @return the mapped database instance response DTO
      */
     @Mapping(source = "user.id", target = "userId")
     @Mapping(source = "subscription.id", target = "subscriptionId")
-    @Mapping(source = "databaseEngine.id", target = "databaseEngine")
+    @Mapping(source = "databaseEngine.name", target = "databaseEngine")
+    @Mapping(target = "username", ignore = true)
+    @Mapping(target = "password", ignore = true)
     DatabaseInstanceResponse toResponse(DatabaseInstance databaseInstance);
 
     /**

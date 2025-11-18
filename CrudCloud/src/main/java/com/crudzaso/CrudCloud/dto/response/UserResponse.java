@@ -22,9 +22,9 @@ public class UserResponse {
 
     private String email;
 
-    private String name;
+    private String firstName;
 
-    private Boolean isOrganization;
+    private String lastName;
 
     private LocalDateTime createdAt;
 }

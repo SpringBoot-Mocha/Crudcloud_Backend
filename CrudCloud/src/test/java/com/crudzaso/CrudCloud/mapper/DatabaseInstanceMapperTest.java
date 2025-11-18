@@ -44,7 +44,8 @@ class DatabaseInstanceMapperTest extends BaseIntegrationTest {
         user = User.builder()
                 .id(1L)
                 .email("test@example.com")
-                .name("Test User")
+                .firstName("Test")
+                .lastName("User")
                 .build();
 
         subscription = Subscription.builder()

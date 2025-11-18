@@ -6,8 +6,10 @@ import com.crudzaso.CrudCloud.dto.request.CreateInstanceRequest;
 import com.crudzaso.CrudCloud.dto.response.DatabaseInstanceResponse;
 import com.crudzaso.CrudCloud.dto.response.InstanceLogResponse;
 import com.crudzaso.CrudCloud.dto.response.InstanceStatsResponse;
+import com.crudzaso.CrudCloud.dto.response.UserResponse;
 import com.crudzaso.CrudCloud.service.DatabaseInstanceService;
 import com.crudzaso.CrudCloud.service.InstanceMonitoringService;
+import com.crudzaso.CrudCloud.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -15,6 +17,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -42,17 +45,28 @@ public class DatabaseInstanceController {
 
     private final DatabaseInstanceService databaseInstanceService;
     private final InstanceMonitoringService monitoringService;
+    private final UserService userService;
 
     /**
      * Create a new database instance.
+     * The user ID is extracted from the JWT token in the Authorization header.
      *
-     * @param request the instance creation request
+     * @param request the instance creation request (without userId - will be extracted from JWT)
      * @return created instance response with 201 status
      */
     @PostMapping
     @Operation(summary = "Create database instance", description = "Creates a new database instance for the user")
     public ResponseEntity<DatabaseInstanceResponse> createInstance(@Valid @RequestBody CreateInstanceRequest request) {
-        log.info("Creating database instance for user: {}", request.getUserId());
+        // Extract email from JWT token via SecurityContext (Phase 4 pattern)
+        String userEmail = SecurityContextHolder.getContext().getAuthentication().getName();
+        log.info("Creating database instance for user: {}", userEmail);
+
+        // Get user to extract ID
+        UserResponse userResponse = userService.getUserByEmail(userEmail);
+
+        // Set userId from JWT token (client does not provide this)
+        request.setUserId(userResponse.getUserId());
+
         DatabaseInstanceResponse response = databaseInstanceService.createInstance(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
@@ -73,16 +87,22 @@ public class DatabaseInstanceController {
 
     /**
      * List all instances for the authenticated user.
+     * The user ID is extracted from the JWT token in the Authorization header.
      *
-     * @param userId the user ID to get instances for
-     * @return list of instances
+     * @return list of instances for the authenticated user
      */
     @GetMapping
     @Operation(summary = "List user instances", description = "Retrieves all database instances for the authenticated user")
-    public ResponseEntity<List<DatabaseInstanceResponse>> getUserInstances(
-            @RequestParam(required = false) Long userId) {
-        log.info("Getting database instances for user: {}", userId);
-        List<DatabaseInstanceResponse> response = databaseInstanceService.getUserInstances(userId);
+    public ResponseEntity<List<DatabaseInstanceResponse>> getUserInstances() {
+        // Extract email from JWT token via SecurityContext
+        String userEmail = SecurityContextHolder.getContext().getAuthentication().getName();
+        log.info("Getting database instances for user: {}", userEmail);
+
+        // Get user to extract ID
+        UserResponse userResponse = userService.getUserByEmail(userEmail);
+
+        // Call service with extracted userId
+        List<DatabaseInstanceResponse> response = databaseInstanceService.getUserInstances(userResponse.getUserId());
         return ResponseEntity.ok(response);
     }
 

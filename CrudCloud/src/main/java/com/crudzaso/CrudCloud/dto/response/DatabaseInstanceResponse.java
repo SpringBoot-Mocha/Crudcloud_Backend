@@ -24,7 +24,7 @@ public class DatabaseInstanceResponse {
 
     private Long subscriptionId;
 
-    private Long databaseEngine;
+    private String databaseEngine;
 
     private String containerName;
 
@@ -37,4 +37,9 @@ public class DatabaseInstanceResponse {
     private LocalDateTime createdAt;
 
     private LocalDateTime updatedAt;
+
+    // Credentials for database connection
+    private String username;
+
+    private String password;
 }

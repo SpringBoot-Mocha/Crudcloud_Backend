@@ -2,7 +2,9 @@ package com.crudzaso.CrudCloud.controller;
 
 import com.crudzaso.CrudCloud.dto.request.CreateSubscriptionRequest;
 import com.crudzaso.CrudCloud.dto.response.SubscriptionResponse;
+import com.crudzaso.CrudCloud.dto.response.UserResponse;
 import com.crudzaso.CrudCloud.service.SubscriptionService;
+import com.crudzaso.CrudCloud.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -10,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -31,6 +34,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class SubscriptionController {
 
     private final SubscriptionService subscriptionService;
+    private final UserService userService;
 
     /**
      * Create or upgrade user subscription.
@@ -50,15 +54,19 @@ public class SubscriptionController {
     /**
      * Get current active subscription for the user.
      *
-     * @param userId the user ID
      * @return current subscription response
      */
     @GetMapping("/current")
-    @Operation(summary = "Get current subscription", description = "Retrieves the current active subscription for a user")
-    public ResponseEntity<SubscriptionResponse> getCurrentSubscription(
-            @RequestParam Long userId) {
-        log.info("Getting current subscription for user: {}", userId);
-        SubscriptionResponse response = subscriptionService.getUserSubscription(userId);
+    @Operation(summary = "Get current subscription", description = "Retrieves the current active subscription for the authenticated user")
+    public ResponseEntity<SubscriptionResponse> getCurrentSubscription() {
+        // Get authenticated user email from SecurityContext
+        String userEmail = SecurityContextHolder.getContext().getAuthentication().getName();
+        log.info("Getting current subscription for user: {}", userEmail);
+
+        // Get user to extract their ID
+        UserResponse userResponse = userService.getUserByEmail(userEmail);
+
+        SubscriptionResponse response = subscriptionService.getUserSubscription(userResponse.getUserId());
         return ResponseEntity.ok(response);
     }
 

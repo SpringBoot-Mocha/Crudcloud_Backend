@@ -2,7 +2,9 @@ package com.crudzaso.CrudCloud.controller;
 
 import com.crudzaso.CrudCloud.dto.request.CreateSubscriptionRequest;
 import com.crudzaso.CrudCloud.dto.response.SubscriptionResponse;
+import com.crudzaso.CrudCloud.dto.response.UserResponse;
 import com.crudzaso.CrudCloud.service.SubscriptionService;
+import com.crudzaso.CrudCloud.service.UserService;
 import com.crudzaso.CrudCloud.exception.ResourceNotFoundException;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.mock.mockito.MockBean;
@@ -11,6 +13,7 @@ import org.springframework.http.MediaType;
 import java.time.LocalDateTime;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -26,6 +29,9 @@ public class SubscriptionControllerTest extends BaseControllerTest {
 
     @MockBean
     private SubscriptionService subscriptionService;
+
+    @MockBean
+    private UserService userService;
 
     @Test
     public void testUpgradeSubscriptionSuccess() throws Exception {
@@ -96,6 +102,13 @@ public class SubscriptionControllerTest extends BaseControllerTest {
     @Test
     public void testGetCurrentSubscriptionSuccess() throws Exception {
         // Arrange
+        UserResponse userResponse = UserResponse.builder()
+                .userId(1L)
+                .email("testuser")
+                .firstName("Test")
+                .lastName("User")
+                .build();
+
         SubscriptionResponse response = SubscriptionResponse.builder()
                 .id(1L)
                 .userId(1L)
@@ -107,6 +120,8 @@ public class SubscriptionControllerTest extends BaseControllerTest {
                 .createdAt(LocalDateTime.now().minusMonths(1))
                 .build();
 
+        when(userService.getUserByEmail(anyString()))
+                .thenReturn(userResponse);
         when(subscriptionService.getUserSubscription(1L)).thenReturn(response);
 
         // Act & Assert
@@ -122,8 +137,17 @@ public class SubscriptionControllerTest extends BaseControllerTest {
     @Test
     public void testGetCurrentSubscriptionNotFound() throws Exception {
         // Arrange
-        when(subscriptionService.getUserSubscription(999L))
-                .thenThrow(new ResourceNotFoundException("Subscription", "userId", 999L));
+        UserResponse userResponse = UserResponse.builder()
+                .userId(1L)
+                .email("testuser")
+                .firstName("Test")
+                .lastName("User")
+                .build();
+
+        when(userService.getUserByEmail(anyString()))
+                .thenReturn(userResponse);
+        when(subscriptionService.getUserSubscription(1L))
+                .thenThrow(new ResourceNotFoundException("Subscription", "userId", 1L));
 
         // Act & Assert
         mockMvc.perform(get("/api/v1/subscriptions/current")

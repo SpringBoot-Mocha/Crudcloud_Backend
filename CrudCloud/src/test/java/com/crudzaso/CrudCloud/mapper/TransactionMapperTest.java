@@ -43,8 +43,8 @@ class TransactionMapperTest extends BaseIntegrationTest {
         user = User.builder()
                 .id(1L)
                 .email("user@example.com")
-                .name("Test User")
-                .isOrganization(false)
+                .firstName("Test")
+                .lastName("User")
                 .build();
 
         LocalDateTime now = LocalDateTime.now();
@@ -257,8 +257,8 @@ class TransactionMapperTest extends BaseIntegrationTest {
         User user2 = User.builder()
                 .id(2L)
                 .email("user2@example.com")
-                .name("Another User")
-                .isOrganization(false)
+                .firstName("Another")
+                .lastName("User")
                 .build();
 
         LocalDateTime now = LocalDateTime.now();
@@ -400,8 +400,8 @@ class TransactionMapperTest extends BaseIntegrationTest {
         User differentUser = User.builder()
                 .id(999L)
                 .email("different@example.com")
-                .name("Different User")
-                .isOrganization(true)
+                .firstName("Different")
+                .lastName("User")
                 .build();
 
         LocalDateTime now = LocalDateTime.now();

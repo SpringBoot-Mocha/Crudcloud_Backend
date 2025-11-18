@@ -2,8 +2,7 @@ package com.crudzaso.CrudCloud.dto.request;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.Pattern;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -11,6 +10,13 @@ import lombok.NoArgsConstructor;
 /**
  * DTO for user registration request
  * Validates user input when creating a new user account
+ *
+ * Password requirements:
+ * - Minimum 8 characters
+ * - At least one uppercase letter (A-Z)
+ * - At least one lowercase letter (a-z)
+ * - At least one number (0-9)
+ * - At least one symbol (!@#$%^&* etc)
  */
 @Data
 @NoArgsConstructor
@@ -23,25 +29,24 @@ public class CreateUserRequest {
 
     /**
      * Password for the new user account
-     * Must be at least 6 characters long
+     * Must meet all security requirements:
+     * - Minimum 8 characters
+     * - Uppercase letter (A-Z)
+     * - Lowercase letter (a-z)
+     * - Number (0-9)
+     * - Symbol (!@#$%^&*()_+-=[]{};':"\\|,.<>/?)
      * Will be hashed with BCrypt before storage
      */
     @NotBlank(message = "Password is required")
-    @Size(min = 6, message = "Password must be at least 6 characters")
+    @Pattern(
+        regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[!@#$%^&*()_+\\-=\\[\\]{};':\"\\\\|,.<>\\/?]).{8,}$",
+        message = "Password must have at least 8 characters, one uppercase, one lowercase, one number, and one symbol"
+    )
     private String password;
 
-    /**
-     * User's full name or organization name
-     * Required field
-     */
-    @NotBlank(message = "Name is required")
-    private String name;
+    @NotBlank(message = "First name is required")
+    private String firstName;
 
-    /**
-     * Flag indicating if this is an organization account
-     * Default: false (individual user)
-     * Must be explicitly provided
-     */
-    @NotNull(message = "isOrganization must be provided")
-    private Boolean isOrganization = false;
+    @NotBlank(message = "Last name is required")
+    private String lastName;
 }

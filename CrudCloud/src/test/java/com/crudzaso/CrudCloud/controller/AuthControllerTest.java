@@ -38,14 +38,14 @@ public class AuthControllerTest extends BasePublicControllerTest {
         CreateUserRequest request = new CreateUserRequest();
         request.setEmail("test@example.com");
         request.setPassword("SecurePass123!");
-        request.setName("Test User");
-        request.setIsOrganization(false);
+        request.setFirstName("Test");
+        request.setLastName("User");
 
         UserResponse response = UserResponse.builder()
                 .userId(1L)
                 .email("test@example.com")
-                .name("Test User")
-                .isOrganization(false)
+                .firstName("Test")
+                .lastName("User")
                 .createdAt(LocalDateTime.now())
                 .build();
 
@@ -58,7 +58,8 @@ public class AuthControllerTest extends BasePublicControllerTest {
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.userId").value(1L))
                 .andExpect(jsonPath("$.email").value("test@example.com"))
-                .andExpect(jsonPath("$.name").value("Test User"));
+                .andExpect(jsonPath("$.firstName").value("Test"))
+                .andExpect(jsonPath("$.lastName").value("User"));
     }
 
     @Test
@@ -67,8 +68,8 @@ public class AuthControllerTest extends BasePublicControllerTest {
         CreateUserRequest request = new CreateUserRequest();
         request.setEmail("invalid-email");
         request.setPassword("SecurePass123!");
-        request.setName("Test User");
-        request.setIsOrganization(false);
+        request.setFirstName("Test");
+        request.setLastName("User");
 
         // Act & Assert
         mockMvc.perform(post("/api/v1/auth/register")
@@ -89,8 +90,8 @@ public class AuthControllerTest extends BasePublicControllerTest {
         UserResponse userResponse = UserResponse.builder()
                 .userId(1L)
                 .email("test@example.com")
-                .name("Test User")
-                .isOrganization(false)
+                .firstName("Test")
+                .lastName("User")
                 .createdAt(LocalDateTime.now())
                 .build();
 

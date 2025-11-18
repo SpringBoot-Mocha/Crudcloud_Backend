@@ -9,6 +9,8 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
+import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
@@ -54,6 +56,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/auth/**", "/api/v1/auth/**").permitAll()
                 .requestMatchers("/api/engines/**", "/api/v1/engines/**").permitAll()
                 .requestMatchers("/api/plans/**", "/api/v1/plans/**").permitAll()
+                .requestMatchers("/api/v1/health", "/api/health").permitAll()
                 .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
                 // Health check endpoint
                 .requestMatchers("/actuator/**").permitAll()
@@ -96,5 +99,18 @@ public class SecurityConfig {
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
+    }
+
+    /**
+     * Configures a JwtDecoder for validating Google OAuth JWT tokens.
+     * Uses Google's public JWKS endpoint to validate token signatures.
+     *
+     * @return JwtDecoder configured for Google tokens
+     */
+    @Bean
+    public JwtDecoder jwtDecoder() {
+        // Google's JWKS endpoint for validating JWT signatures
+        String googleJwksUri = "https://www.googleapis.com/oauth2/v3/certs";
+        return NimbusJwtDecoder.withJwkSetUri(googleJwksUri).build();
     }
 }

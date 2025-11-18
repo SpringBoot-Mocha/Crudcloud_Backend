@@ -58,7 +58,8 @@ class SubscriptionServiceImplTest {
         user = User.builder()
                 .id(1L)
                 .email("test@example.com")
-                .name("Test User")
+                .firstName("Test")
+                .lastName("User")
                 .build();
 
         plan = Plan.builder()

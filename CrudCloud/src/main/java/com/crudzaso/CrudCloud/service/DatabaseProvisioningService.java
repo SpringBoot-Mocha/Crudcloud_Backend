@@ -49,6 +49,22 @@ public interface DatabaseProvisioningService {
     void deleteDatabase(DatabaseInstance instance) throws ProvisioningException;
 
     /**
+     * Pause (suspend) a running database container on the remote VPS.
+     *
+     * @param instance The DatabaseInstance to pause
+     * @throws ProvisioningException if pause fails
+     */
+    void pauseDatabase(DatabaseInstance instance) throws ProvisioningException;
+
+    /**
+     * Resume a paused database container on the remote VPS.
+     *
+     * @param instance The DatabaseInstance to resume
+     * @throws ProvisioningException if resume fails
+     */
+    void resumeDatabase(DatabaseInstance instance) throws ProvisioningException;
+
+    /**
      * Result of successful database provisioning
      */
     class ProvisioningResult {

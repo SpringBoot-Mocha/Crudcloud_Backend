@@ -22,13 +22,17 @@ CREATE TYPE transaction_status AS ENUM (
 
 -- ============================================================================
 -- 1. USERS - Usuarios del sistema
+-- Password nullable: OAuth users (Google/GitHub) don't have passwords
+-- OAuth fields added via migrations (oauth_provider, oauth_provider_id)
 -- ============================================================================
 CREATE TABLE users (
     id BIGSERIAL PRIMARY KEY,
     email VARCHAR(255) UNIQUE NOT NULL,
-    password_hash VARCHAR(255) NOT NULL,
-    name VARCHAR(255) NOT NULL,
-    is_organization BOOLEAN DEFAULT false,
+    password_hash VARCHAR(255),
+    first_name VARCHAR(255) NOT NULL,
+    last_name VARCHAR(255) NOT NULL,
+    oauth_provider VARCHAR(50),
+    oauth_provider_id VARCHAR(255) UNIQUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -61,13 +65,14 @@ INSERT INTO plans (name, max_instances, max_storage_gb, price_per_month, descrip
 
 -- ============================================================================
 -- TEST DATA - USUARIOS DE PRUEBA
+-- Password hash: BCrypt hash of "Zxcvbnm123." (secure password)
 -- ============================================================================
-INSERT INTO users (email, password_hash, name, is_organization, created_at, updated_at) VALUES
-('admin@crudcloud.com', '$2a$10$slYQmyNdGzin7olVN3p5be4DlH.PKZbv5H8KnzzVgXXbVxzy990qm', 'Admin User', false, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-('john.doe@example.com', '$2a$10$slYQmyNdGzin7olVN3p5be4DlH.PKZbv5H8KnzzVgXXbVxzy990qm', 'John Doe', false, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-('jane.smith@example.com', '$2a$10$slYQmyNdGzin7olVN3p5be4DlH.PKZbv5H8KnzzVgXXbVxzy990qm', 'Jane Smith', false, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-('acme.corp@company.com', '$2a$10$slYQmyNdGzin7olVN3p5be4DlH.PKZbv5H8KnzzVgXXbVxzy990qm', 'ACME Corporation', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-('startup.io@example.com', '$2a$10$slYQmyNdGzin7olVN3p5be4DlH.PKZbv5H8KnzzVgXXbVxzy990qm', 'Startup IO', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+INSERT INTO users (email, password_hash, first_name, last_name, created_at, updated_at) VALUES
+('admin@crudcloud.com', '$2a$10$slYQmyNdGzin7olVN3p5be4DlH.PKZbv5H8KnzzVgXXbVxzy990qm', 'Admin', 'User', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('john.doe@example.com', '$2a$10$slYQmyNdGzin7olVN3p5be4DlH.PKZbv5H8KnzzVgXXbVxzy990qm', 'John', 'Doe', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('jane.smith@example.com', '$2a$10$slYQmyNdGzin7olVN3p5be4DlH.PKZbv5H8KnzzVgXXbVxzy990qm', 'Jane', 'Smith', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('acme.corp@company.com', '$2a$10$slYQmyNdGzin7olVN3p5be4DlH.PKZbv5H8KnzzVgXXbVxzy990qm', 'ACME', 'Corporation', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('startup.io@example.com', '$2a$10$slYQmyNdGzin7olVN3p5be4DlH.PKZbv5H8KnzzVgXXbVxzy990qm', 'Startup', 'IO', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
 -- ============================================================================
 -- 3. SUBSCRIPTIONS - Suscripciones activas de usuarios

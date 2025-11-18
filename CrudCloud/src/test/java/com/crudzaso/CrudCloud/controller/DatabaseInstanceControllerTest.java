@@ -3,7 +3,9 @@ package com.crudzaso.CrudCloud.controller;
 import com.crudzaso.CrudCloud.domain.enums.InstanceStatus;
 import com.crudzaso.CrudCloud.dto.request.CreateInstanceRequest;
 import com.crudzaso.CrudCloud.dto.response.DatabaseInstanceResponse;
+import com.crudzaso.CrudCloud.dto.response.UserResponse;
 import com.crudzaso.CrudCloud.service.DatabaseInstanceService;
+import com.crudzaso.CrudCloud.service.UserService;
 import com.crudzaso.CrudCloud.exception.ResourceNotFoundException;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.mock.mockito.MockBean;
@@ -15,6 +17,7 @@ import java.util.Collections;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -32,6 +35,9 @@ public class DatabaseInstanceControllerTest extends BaseControllerTest {
     @MockBean
     private DatabaseInstanceService databaseInstanceService;
 
+    @MockBean
+    private UserService userService;
+
     @Test
     public void testCreateInstanceSuccess() throws Exception {
         // Arrange
@@ -45,7 +51,7 @@ public class DatabaseInstanceControllerTest extends BaseControllerTest {
                 .id(1L)
                 .userId(1L)
                 .subscriptionId(1L)
-                .databaseEngine(1L)
+                .databaseEngine("PostgreSQL")
                 .containerName("prod-db-001")
                 .host("db.example.com")
                 .port(5432)
@@ -53,6 +59,15 @@ public class DatabaseInstanceControllerTest extends BaseControllerTest {
                 .createdAt(LocalDateTime.now())
                 .build();
 
+        UserResponse userResponse = UserResponse.builder()
+                .userId(1L)
+                .email("testuser")
+                .firstName("Test")
+                .lastName("User")
+                .build();
+
+        when(userService.getUserByEmail(anyString()))
+                .thenReturn(userResponse);
         when(databaseInstanceService.createInstance(any(CreateInstanceRequest.class)))
                 .thenReturn(response);
 
@@ -75,6 +90,15 @@ public class DatabaseInstanceControllerTest extends BaseControllerTest {
         request.setDatabaseEngineId(1L);
         request.setInstanceName("Invalid User DB");
 
+        UserResponse userResponse = UserResponse.builder()
+                .userId(1L)
+                .email("testuser")
+                .firstName("Test")
+                .lastName("User")
+                .build();
+
+        when(userService.getUserByEmail(anyString()))
+                .thenReturn(userResponse);
         when(databaseInstanceService.createInstance(any(CreateInstanceRequest.class)))
                 .thenThrow(new ResourceNotFoundException("User", 999L));
 
@@ -93,7 +117,7 @@ public class DatabaseInstanceControllerTest extends BaseControllerTest {
                 .id(1L)
                 .userId(1L)
                 .subscriptionId(1L)
-                .databaseEngine(1L)
+                .databaseEngine("PostgreSQL")
                 .containerName("prod-db-001")
                 .host("db.example.com")
                 .port(5432)
@@ -128,12 +152,19 @@ public class DatabaseInstanceControllerTest extends BaseControllerTest {
     @Test
     public void testGetUserInstancesSuccess() throws Exception {
         // Arrange
+        UserResponse userResponse = UserResponse.builder()
+                .userId(1L)
+                .email("testuser")
+                .firstName("Test")
+                .lastName("User")
+                .build();
+
         List<DatabaseInstanceResponse> instances = Arrays.asList(
                 DatabaseInstanceResponse.builder()
                         .id(1L)
                         .userId(1L)
                         .subscriptionId(1L)
-                        .databaseEngine(1L)
+                        .databaseEngine("PostgreSQL")
                         .containerName("prod-db-001")
                         .status(InstanceStatus.RUNNING)
                         .port(5432)
@@ -144,7 +175,7 @@ public class DatabaseInstanceControllerTest extends BaseControllerTest {
                         .id(2L)
                         .userId(1L)
                         .subscriptionId(1L)
-                        .databaseEngine(2L)
+                        .databaseEngine("MySQL")
                         .containerName("staging-db-001")
                         .status(InstanceStatus.RUNNING)
                         .port(3306)
@@ -153,6 +184,8 @@ public class DatabaseInstanceControllerTest extends BaseControllerTest {
                         .build()
         );
 
+        when(userService.getUserByEmail(anyString()))
+                .thenReturn(userResponse);
         when(databaseInstanceService.getUserInstances(1L)).thenReturn(instances);
 
         // Act & Assert
@@ -168,7 +201,16 @@ public class DatabaseInstanceControllerTest extends BaseControllerTest {
     @Test
     public void testGetUserInstancesEmpty() throws Exception {
         // Arrange
-        when(databaseInstanceService.getUserInstances(2L)).thenReturn(Collections.emptyList());
+        UserResponse userResponse = UserResponse.builder()
+                .userId(1L)
+                .email("testuser")
+                .firstName("Test")
+                .lastName("User")
+                .build();
+
+        when(userService.getUserByEmail(anyString()))
+                .thenReturn(userResponse);
+        when(databaseInstanceService.getUserInstances(1L)).thenReturn(Collections.emptyList());
 
         // Act & Assert
         mockMvc.perform(get("/api/v1/instances")

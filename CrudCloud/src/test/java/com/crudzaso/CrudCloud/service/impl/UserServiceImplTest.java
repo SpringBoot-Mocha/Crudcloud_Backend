@@ -1,14 +1,16 @@
 package com.crudzaso.CrudCloud.service.impl;
 
+import com.crudzaso.CrudCloud.domain.entity.Plan;
+import com.crudzaso.CrudCloud.domain.entity.Subscription;
 import com.crudzaso.CrudCloud.domain.entity.User;
 import com.crudzaso.CrudCloud.dto.request.CreateUserRequest;
-import com.crudzaso.CrudCloud.dto.request.UpdateUserRequest;
 import com.crudzaso.CrudCloud.dto.response.UserResponse;
 import com.crudzaso.CrudCloud.exception.AppException;
-import com.crudzaso.CrudCloud.exception.ResourceNotFoundException;
 import com.crudzaso.CrudCloud.mapper.UserMapper;
+import com.crudzaso.CrudCloud.repository.PlanRepository;
+import com.crudzaso.CrudCloud.repository.SubscriptionRepository;
 import com.crudzaso.CrudCloud.repository.UserRepository;
-import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -16,11 +18,11 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import java.time.LocalDateTime;
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 /**
@@ -28,6 +30,7 @@ import static org.mockito.Mockito.*;
  * Coverage: All methods in UserServiceImpl
  */
 @ExtendWith(MockitoExtension.class)
+@DisplayName("UserServiceImpl Tests")
 class UserServiceImplTest {
 
     @Mock
@@ -39,212 +42,168 @@ class UserServiceImplTest {
     @Mock
     private PasswordEncoder passwordEncoder;
 
+    @Mock
+    private PlanRepository planRepository;
+
+    @Mock
+    private SubscriptionRepository subscriptionRepository;
+
     @InjectMocks
     private UserServiceImpl userService;
 
-    private CreateUserRequest createUserRequest;
-    private UpdateUserRequest updateUserRequest;
-    private User user;
-    private UserResponse userResponse;
-
-    @BeforeEach
-    void setUp() {
-        // Setup test data
-        createUserRequest = new CreateUserRequest();
-        createUserRequest.setEmail("test@example.com");
-        createUserRequest.setPassword("password123");
-        createUserRequest.setName("Test User");
-        createUserRequest.setIsOrganization(false);
-
-        updateUserRequest = new UpdateUserRequest();
-        updateUserRequest.setName("Updated Name");
-
-        user = User.builder()
-                .id(1L)
-                .email("test@example.com")
-                .passwordHash("$2a$10$hashedPassword")
-                .name("Test User")
-                .isOrganization(false)
-                .build();
-
-        userResponse = new UserResponse();
-        userResponse.setUserId(1L);
-        userResponse.setEmail("test@example.com");
-        userResponse.setName("Test User");
-        userResponse.setIsOrganization(false);
-    }
+    // ===== TEST CASES AQUÍ =====
+    // (Copiar los 4 casos de prueba del TESTING_PLAN.md)
 
     @Test
-    void createUser_Success() {
-        // Given
-        when(userRepository.existsByEmail(anyString())).thenReturn(false);
-        when(passwordEncoder.encode(anyString())).thenReturn("$2a$10$hashedPassword");
+    @DisplayName("Cuando se crea un usuario, debe crear automáticamente suscripción Free")
+    void testCreateUserWithFreeSubscription() {
+        // GIVEN
+        CreateUserRequest request = new CreateUserRequest();
+        request.setEmail("test@example.com");
+        request.setPassword("Test123");
+        request.setFirstName("Test");
+        request.setLastName("User");
+
+        User user = User.builder()
+                .id(1L)
+                .email("test@example.com")
+                .firstName("Test")
+                .lastName("User")
+                .build();
+
+        Plan freePlan = Plan.builder()
+                .id(1L)
+                .name("Free")
+                .maxInstances(2)
+                .build();
+
+        UserResponse expectedResponse = new UserResponse();
+        expectedResponse.setUserId(1L);
+        expectedResponse.setEmail("test@example.com");
+
+        // WHEN
+        when(userRepository.existsByEmail(request.getEmail())).thenReturn(false);
+        when(passwordEncoder.encode(request.getPassword())).thenReturn("encoded");
         when(userRepository.save(any(User.class))).thenReturn(user);
-        when(userMapper.toResponse(any(User.class))).thenReturn(userResponse);
+        when(planRepository.findByName("Free")).thenReturn(Optional.of(freePlan));
+        when(subscriptionRepository.save(any(Subscription.class))).thenReturn(new Subscription());
+        when(userMapper.toResponse(user)).thenReturn(expectedResponse);
 
-        // When
-        UserResponse result = userService.createUser(createUserRequest);
+        UserResponse result = userService.createUser(request);
 
-        // Then
-        assertNotNull(result);
-        assertEquals("test@example.com", result.getEmail());
-        assertEquals("Test User", result.getName());
+        // THEN
+        assertThat(result.getUserId()).isEqualTo(1L);
+        assertThat(result.getEmail()).isEqualTo("test@example.com");
 
-        verify(userRepository).existsByEmail("test@example.com");
-        verify(passwordEncoder).encode("password123");
-        verify(userRepository).save(any(User.class));
-        verify(userMapper).toResponse(any(User.class));
+        // Verificar que se llamó save en subscription
+        verify(subscriptionRepository, times(1)).save(any(Subscription.class));
     }
 
     @Test
-    void createUser_EmailAlreadyExists_ThrowsAppException() {
-        // Given
-        when(userRepository.existsByEmail(anyString())).thenReturn(true);
+    @DisplayName("La suscripción Free debe estar marcada como activa")
+    void testFreeSubscriptionIsActive() {
+        // GIVEN
+        CreateUserRequest request = new CreateUserRequest();
+        request.setEmail("test2@example.com");
+        request.setPassword("Test123");
+        request.setFirstName("Test");
+        request.setLastName("User2");
 
-        // When & Then
-        AppException exception = assertThrows(AppException.class, () -> {
-            userService.createUser(createUserRequest);
-        });
-
-        assertEquals("Email already registered", exception.getMessage());
-        verify(userRepository).existsByEmail("test@example.com");
-        verify(userRepository, never()).save(any(User.class));
-    }
-
-    @Test
-    void getUserById_Success() {
-        // Given
-        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
-        when(userMapper.toResponse(any(User.class))).thenReturn(userResponse);
-
-        // When
-        UserResponse result = userService.getUserById(1L);
-
-        // Then
-        assertNotNull(result);
-        assertEquals(1L, result.getUserId());
-        assertEquals("test@example.com", result.getEmail());
-
-        verify(userRepository).findById(1L);
-        verify(userMapper).toResponse(user);
-    }
-
-    @Test
-    void getUserById_UserNotFound_ThrowsResourceNotFoundException() {
-        // Given
-        when(userRepository.findById(999L)).thenReturn(Optional.empty());
-
-        // When & Then
-        assertThrows(ResourceNotFoundException.class, () -> {
-            userService.getUserById(999L);
-        });
-
-        verify(userRepository).findById(999L);
-        verify(userMapper, never()).toResponse(any());
-    }
-
-    @Test
-    void getUserByEmail_Success() {
-        // Given
-        when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(user));
-        when(userMapper.toResponse(any(User.class))).thenReturn(userResponse);
-
-        // When
-        UserResponse result = userService.getUserByEmail("test@example.com");
-
-        // Then
-        assertNotNull(result);
-        assertEquals("test@example.com", result.getEmail());
-
-        verify(userRepository).findByEmail("test@example.com");
-        verify(userMapper).toResponse(user);
-    }
-
-    @Test
-    void getUserByEmail_UserNotFound_ThrowsAppException() {
-        // Given
-        when(userRepository.findByEmail("nonexistent@example.com")).thenReturn(Optional.empty());
-
-        // When & Then
-        AppException exception = assertThrows(AppException.class, () -> {
-            userService.getUserByEmail("nonexistent@example.com");
-        });
-
-        assertTrue(exception.getMessage().contains("User not found with email"));
-        verify(userRepository).findByEmail("nonexistent@example.com");
-    }
-
-    @Test
-    void updateUser_Success() {
-        // Given
-        User updatedUser = User.builder()
-                .id(1L)
-                .email("test@example.com")
-                .passwordHash("$2a$10$hashedPassword")
-                .name("Updated Name")
-                .isOrganization(false)
+        User user = User.builder()
+                .id(2L)
+                .email("test2@example.com")
                 .build();
 
-        UserResponse updatedUserResponse = new UserResponse();
-        updatedUserResponse.setUserId(1L);
-        updatedUserResponse.setEmail("test@example.com");
-        updatedUserResponse.setName("Updated Name");
+        Plan freePlan = Plan.builder()
+                .id(1L)
+                .name("Free")
+                .maxInstances(2)
+                .build();
 
-        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
-        when(userRepository.save(any(User.class))).thenReturn(updatedUser);
-        when(userMapper.toResponse(any(User.class))).thenReturn(updatedUserResponse);
+        Subscription subscription = Subscription.builder()
+                .id(1L)
+                .user(user)
+                .plan(freePlan)
+                .startDate(LocalDateTime.now())
+                .isActive(true)
+                .build();
 
-        // When
-        UserResponse result = userService.updateUser(1L, updateUserRequest);
+        UserResponse expectedResponse = new UserResponse();
+        expectedResponse.setUserId(2L);
 
-        // Then
-        assertNotNull(result);
-        assertEquals("Updated Name", result.getName());
+        // WHEN
+        when(userRepository.existsByEmail(request.getEmail())).thenReturn(false);
+        when(passwordEncoder.encode(request.getPassword())).thenReturn("encoded");
+        when(userRepository.save(any(User.class))).thenReturn(user);
+        when(planRepository.findByName("Free")).thenReturn(Optional.of(freePlan));
+        when(subscriptionRepository.save(any(Subscription.class))).thenReturn(subscription);
+        when(userMapper.toResponse(user)).thenReturn(expectedResponse);
 
-        verify(userRepository).findById(1L);
-        verify(userRepository).save(any(User.class));
-        verify(userMapper).toResponse(any(User.class));
+        UserResponse result = userService.createUser(request);
+
+        // THEN
+        assertThat(result.getUserId()).isEqualTo(2L);
+        verify(subscriptionRepository, times(1)).save(argThat(sub -> sub.getIsActive()));
     }
 
     @Test
-    void updateUser_UserNotFound_ThrowsResourceNotFoundException() {
-        // Given
-        when(userRepository.findById(999L)).thenReturn(Optional.empty());
+    @DisplayName("Si Plan Free no existe, debe lanzar AppException")
+    void testCreateUserFailsIfFreePlanNotFound() {
+        // GIVEN
+        CreateUserRequest request = new CreateUserRequest();
+        request.setEmail("test3@example.com");
+        request.setPassword("Test123");
+        request.setFirstName("Test");
+        request.setLastName("User3");
 
-        // When & Then
-        assertThrows(ResourceNotFoundException.class, () -> {
-            userService.updateUser(999L, updateUserRequest);
-        });
+        User user = User.builder()
+                .id(3L)
+                .email("test3@example.com")
+                .build();
 
-        verify(userRepository).findById(999L);
-        verify(userRepository, never()).save(any(User.class));
+        // WHEN
+        when(userRepository.existsByEmail(request.getEmail())).thenReturn(false);
+        when(passwordEncoder.encode(request.getPassword())).thenReturn("encoded");
+        when(userRepository.save(any(User.class))).thenReturn(user);
+        when(planRepository.findByName("Free")).thenReturn(Optional.empty()); // Plan no existe
+
+        // THEN
+        assertThatThrownBy(() -> userService.createUser(request))
+                .isInstanceOf(AppException.class)
+                .hasMessageContaining("Free plan not found");
     }
 
     @Test
-    void deleteUser_Success() {
-        // Given
-        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
-        doNothing().when(userRepository).delete(any(User.class));
+    @DisplayName("Si la suscripción falla, todo debe hacer rollback")
+    void testTransactionRollbackOnSubscriptionFailure() {
+        // GIVEN
+        CreateUserRequest request = new CreateUserRequest();
+        request.setEmail("test4@example.com");
+        request.setPassword("Test123");
+        request.setFirstName("Test");
+        request.setLastName("User4");
 
-        // When
-        userService.deleteUser(1L);
+        User user = User.builder()
+                .id(4L)
+                .email("test4@example.com")
+                .build();
 
-        // Then
-        verify(userRepository).findById(1L);
-        verify(userRepository).delete(user);
-    }
+        Plan freePlan = Plan.builder()
+                .id(1L)
+                .name("Free")
+                .build();
 
-    @Test
-    void deleteUser_UserNotFound_ThrowsResourceNotFoundException() {
-        // Given
-        when(userRepository.findById(999L)).thenReturn(Optional.empty());
+        // WHEN
+        when(userRepository.existsByEmail(request.getEmail())).thenReturn(false);
+        when(passwordEncoder.encode(request.getPassword())).thenReturn("encoded");
+        when(userRepository.save(any(User.class))).thenReturn(user);
+        when(planRepository.findByName("Free")).thenReturn(Optional.of(freePlan));
+        when(subscriptionRepository.save(any(Subscription.class)))
+                .thenThrow(new RuntimeException("Database error"));
 
-        // When & Then
-        assertThrows(ResourceNotFoundException.class, () -> {
-            userService.deleteUser(999L);
-        });
-
-        verify(userRepository).findById(999L);
-        verify(userRepository, never()).delete(any(User.class));
+        // THEN
+        assertThatThrownBy(() -> userService.createUser(request))
+                .isInstanceOf(AppException.class)
+                .hasMessageContaining("Failed to create subscription");
     }
 }

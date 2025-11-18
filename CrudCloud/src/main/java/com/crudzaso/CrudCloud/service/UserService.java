@@ -9,7 +9,7 @@ public interface UserService {
 
     /**
      * Create a new user account
-     * @param request the user creation request with email, password, name
+     * @param request the user creation request with email, password, firstName, and lastName
      * @return the created user response
      * @throws AppException if email already exists
      */
@@ -46,4 +46,11 @@ public interface UserService {
      * @throws ResourceNotFoundException if user not found
      */
     void deleteUser(Long id);
+
+    /**
+     * Create a free subscription for a new user
+     * @param userId the user ID to create subscription for
+     * @throws AppException if subscription creation fails
+     */
+    void createFreeSubscriptionForUser(Long userId);
 }

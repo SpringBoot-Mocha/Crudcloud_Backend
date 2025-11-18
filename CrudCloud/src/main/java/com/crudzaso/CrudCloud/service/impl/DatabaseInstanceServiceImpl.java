@@ -23,8 +23,10 @@ import com.crudzaso.CrudCloud.service.DatabaseProvisioningService;
 import com.crudzaso.CrudCloud.service.CredentialEncryptionService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.UUID;
@@ -48,7 +50,14 @@ public class DatabaseInstanceServiceImpl implements DatabaseInstanceService {
     private final DatabaseProvisioningService provisioningService;
     private final CredentialEncryptionService encryptionService;
 
+    @Value("${provisioning.enabled:false}")
+    private boolean provisioningEnabled;
+
+    @Value("${database.host:localhost}")
+    private String databaseHost;
+
     @Override
+    @Transactional
     public DatabaseInstanceResponse createInstance(CreateInstanceRequest request) {
         log.info("Creating database instance for user ID: {} and subscription ID: {}",
                 request.getUserId(), request.getSubscriptionId());
@@ -90,7 +99,7 @@ public class DatabaseInstanceServiceImpl implements DatabaseInstanceService {
                 .subscription(subscription)
                 .databaseEngine(engine)
                 .containerName(containerName)
-                .host("localhost")  // Placeholder, will be updated by provisioning
+                .host(databaseHost)  // Will be updated by provisioning if enabled
                 .port(engine.getDefaultPort())
                 .status(InstanceStatus.CREATING)
                 .build();
@@ -99,30 +108,48 @@ public class DatabaseInstanceServiceImpl implements DatabaseInstanceService {
         log.info("Database instance record created with ID: {}", savedInstance.getId());
 
         // ============================================================================
-        // PROVISIONING: Create real database on VPS
+        // PROVISIONING: Create real database on VPS or use development mode
         // ============================================================================
         try {
             // Generate secure credentials
             String username = "user_" + savedInstance.getId();  // e.g., user_123
             String plainPassword = encryptionService.generateSecurePassword();
 
-            log.info("🚀 Starting provisioning for instance ID: {}", savedInstance.getId());
+            // IMPORTANT: Initialize lazy-loaded databaseEngine relationship
+            // Access it to ensure it's loaded before provisioning
+            String engineName = engine.getName();  // Use the engine variable we already have
+            log.info("Instance engine verified: {}", engineName);
 
-            // Provision database on VPS
-            DatabaseProvisioningService.ProvisioningResult result = provisioningService.provisionDatabase(
-                    savedInstance,
-                    containerName,  // Use container name as database name
-                    username,
-                    plainPassword
-            );
+            if (provisioningEnabled) {
+                log.info("🚀 Starting provisioning for instance ID: {} (VPS Mode)", savedInstance.getId());
 
-            // Update instance with real connection details
-            savedInstance.setHost(result.host);
-            savedInstance.setPort(result.port);
-            savedInstance.setStatus(InstanceStatus.RUNNING);
+                // Provision database on VPS
+                // Note: savedInstance may have lazy-loaded databaseEngine, so we ensure engine is set
+                savedInstance.setDatabaseEngine(engine);  // Ensure the engine is properly set
+                DatabaseProvisioningService.ProvisioningResult result = provisioningService.provisionDatabase(
+                        savedInstance,
+                        containerName,  // Use container name as database name
+                        username,
+                        plainPassword
+                );
+
+                // Update instance with real connection details
+                savedInstance.setHost(result.host);
+                savedInstance.setPort(result.port);
+                savedInstance.setStatus(InstanceStatus.RUNNING);
+
+            } else {
+                // DEVELOPMENT MODE: Use configured database host without SSH provisioning
+                log.info("🏗️  Development Mode: Skipping remote provisioning, using host: {}", databaseHost);
+
+                // Use configured database host with default port for development
+                savedInstance.setHost(databaseHost);
+                savedInstance.setPort(engine.getDefaultPort());
+                savedInstance.setStatus(InstanceStatus.RUNNING);
+            }
 
             DatabaseInstance updatedInstance = databaseInstanceRepository.save(savedInstance);
-            log.info("✅ Database provisioning completed successfully");
+            log.info("✅ Instance configuration completed successfully");
 
             // ================================================================
             // SAVE ENCRYPTED CREDENTIALS
@@ -140,12 +167,17 @@ public class DatabaseInstanceServiceImpl implements DatabaseInstanceService {
             // BUILD RESPONSE WITH PLAINTEXT CREDENTIALS (ONLY ONCE)
             // ================================================================
             // Note: We return credentials in plaintext ONLY in this response
-            // Subsequent GET requests will NOT include the plaintext password
             log.info("📧 Returning credentials to user (plaintext shown only once)");
 
             // TODO: Email credentials to user as well
 
-            return databaseInstanceMapper.toResponse(updatedInstance);
+            DatabaseInstanceResponse response = databaseInstanceMapper.toResponse(updatedInstance);
+            // Enrich with plaintext credentials from this creation
+            response.setUsername(username);
+            response.setPassword(plainPassword);
+            // Ensure databaseEngine name is set correctly (from engine variable which has the correct engine)
+            response.setDatabaseEngine(engine.getName());
+            return response;
 
         } catch (DatabaseProvisioningService.ProvisioningException e) {
             log.error("❌ Provisioning failed: {}", e.getMessage(), e);
@@ -162,38 +194,90 @@ public class DatabaseInstanceServiceImpl implements DatabaseInstanceService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public DatabaseInstanceResponse getInstance(Long id) {
         log.debug("Fetching database instance with ID: {}", id);
 
         DatabaseInstance instance = databaseInstanceRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Database Instance", id));
 
-        return databaseInstanceMapper.toResponse(instance);
+        DatabaseInstanceResponse response = databaseInstanceMapper.toResponse(instance);
+        return enrichWithCredentials(response, id);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<DatabaseInstanceResponse> getUserInstances(Long userId) {
         log.debug("Fetching all instances for user ID: {}", userId);
 
-        return databaseInstanceMapper.toResponseList(databaseInstanceRepository.findByUserId(userId));
+        List<DatabaseInstance> instances = databaseInstanceRepository.findByUserId(userId);
+        return instances.stream()
+                .map(databaseInstanceMapper::toResponse)
+                .map(response -> enrichWithCredentials(response, response.getId()))
+                .toList();
+    }
+
+    /**
+     * Enrich instance response with decrypted credentials
+     * @param response the response DTO to enrich
+     * @param instanceId the database instance ID
+     * @return the enriched response with username and decrypted password
+     */
+    private DatabaseInstanceResponse enrichWithCredentials(DatabaseInstanceResponse response, Long instanceId) {
+        try {
+            credentialRepository.findByDatabaseInstanceId(instanceId).ifPresent(credential -> {
+                try {
+                    response.setUsername(credential.getUsername());
+                    String decryptedPassword = encryptionService.decrypt(credential.getEncryptedPassword());
+                    response.setPassword(decryptedPassword);
+                } catch (Exception e) {
+                    log.error("Failed to decrypt password for instance {}: {}", instanceId, e.getMessage(), e);
+                    response.setPassword("[Error: unable to decrypt]");
+                }
+            });
+        } catch (Exception e) {
+            log.error("Failed to enrich credentials for instance {}: {}", instanceId, e.getMessage(), e);
+        }
+        return response;
     }
 
     @Override
+    @Transactional
     public DatabaseInstanceResponse updateInstanceStatus(Long id, InstanceStatus status) {
         log.info("Updating database instance status with ID: {} to status: {}", id, status);
 
         DatabaseInstance instance = databaseInstanceRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Database Instance", id));
 
-        instance.setStatus(status);
-        DatabaseInstance updatedInstance = databaseInstanceRepository.save(instance);
+        try {
+            // Execute Docker command based on desired status
+            if (InstanceStatus.SUSPENDED == status) {
+                log.info("🐳 Executing PAUSE command via Docker...");
+                provisioningService.pauseDatabase(instance);
+            } else if (InstanceStatus.RUNNING == status) {
+                log.info("🐳 Executing RESUME command via Docker...");
+                provisioningService.resumeDatabase(instance);
+            }
 
-        log.info("Database instance status updated successfully with ID: {}", id);
-        return databaseInstanceMapper.toResponse(updatedInstance);
+            // Update database status
+            instance.setStatus(status);
+            DatabaseInstance updatedInstance = databaseInstanceRepository.save(instance);
+
+            log.info("✅ Database instance status updated successfully with ID: {}", id);
+            return databaseInstanceMapper.toResponse(updatedInstance);
+
+        } catch (DatabaseProvisioningService.ProvisioningException e) {
+            log.error("❌ Failed to update instance status: {}", e.getMessage(), e);
+            throw new BusinessException(
+                    "Failed to update instance status: " + e.getMessage(),
+                    HttpStatus.INTERNAL_SERVER_ERROR.value()
+            );
+        }
     }
 
     private String generateContainerName(Long userId) {
-        return "db-" + userId + "-" + UUID.randomUUID().toString().substring(0, 8);
+        // Simple container name without hyphens or special chars: db{userId}{timestamp}
+        return "db" + userId + System.currentTimeMillis();
     }
 
     /**

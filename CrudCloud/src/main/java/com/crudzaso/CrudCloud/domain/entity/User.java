@@ -6,6 +6,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import com.crudzaso.CrudCloud.domain.enums.OAuthProvider;
 
 import java.time.LocalDateTime;
 
@@ -32,20 +33,29 @@ public class User {
     @Column(nullable = false, unique = true)
     private String email;
 
-    @Column(nullable = false)
+    @Column(nullable = true)
     private String passwordHash;
 
     @Column(nullable = false)
-    private String name;
+    private String firstName;
+
+    @Column(nullable = false)
+    private String lastName;
 
     /**
-     * Flag indicating if this account represents an organization
-     * Default value: false (individual user)
-     * Affects billing and feature availability
+     * OAuth provider (GOOGLE, GITHUB).
+     * Null if user registered with email/password.
      */
-    @Column(nullable = false)
-    @Builder.Default
-    private Boolean isOrganization = false;
+    @Column(nullable = true)
+    @Enumerated(EnumType.STRING)
+    private OAuthProvider oauthProvider;
+
+    /**
+     * User ID from the OAuth provider (e.g., Google subject or GitHub user ID).
+     * Null if user registered with email/password.
+     */
+    @Column(nullable = true, unique = true)
+    private String oauthProviderId;
 
     /**
      * Timestamp when the user account was created

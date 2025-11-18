@@ -7,14 +7,18 @@
 
 -- ============================================================================
 -- TABLE: users
--- Description: Stores user accounts (individuals and organizations)
+-- Description: Stores user accounts
+-- Password nullable: OAuth users (Google/GitHub) don't have passwords
+-- OAuth fields for Google/GitHub authentication support
 -- ============================================================================
 CREATE TABLE IF NOT EXISTS users (
     id BIGSERIAL PRIMARY KEY,
     email VARCHAR(255) NOT NULL UNIQUE,
-    password_hash VARCHAR(255) NOT NULL,
-    name VARCHAR(255) NOT NULL,
-    is_organization BOOLEAN NOT NULL DEFAULT FALSE,
+    password_hash VARCHAR(255),
+    first_name VARCHAR(255) NOT NULL,
+    last_name VARCHAR(255) NOT NULL,
+    oauth_provider VARCHAR(50),
+    oauth_provider_id VARCHAR(255) UNIQUE,
     created_at TIMESTAMP NOT NULL,
     updated_at TIMESTAMP NOT NULL
 );
@@ -22,6 +26,8 @@ CREATE TABLE IF NOT EXISTS users (
 -- Create indexes for performance optimization
 CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
 CREATE INDEX IF NOT EXISTS idx_users_created_at ON users(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_users_oauth_provider ON users(oauth_provider);
+CREATE INDEX IF NOT EXISTS idx_users_oauth_provider_id ON users(oauth_provider_id);
 
 -- ============================================================================
 -- TABLE: plans
@@ -140,5 +146,39 @@ CREATE INDEX IF NOT EXISTS idx_transactions_mercadopago_payment_id ON transactio
 CREATE INDEX IF NOT EXISTS idx_transactions_status ON transactions(status);
 
 -- ============================================================================
--- End of V0__create_schema.sql
+-- TABLE: instance_logs
+-- Description: Logging for database instances
+-- ============================================================================
+CREATE TABLE IF NOT EXISTS instance_logs (
+    id BIGSERIAL PRIMARY KEY,
+    instance_id BIGINT NOT NULL,
+    log_level VARCHAR(50) NOT NULL,
+    message TEXT NOT NULL,
+    created_at TIMESTAMP NOT NULL,
+    CONSTRAINT fk_instance_logs_instance_id FOREIGN KEY (instance_id) REFERENCES database_instances(id) ON DELETE CASCADE
+);
+
+-- Create index for instance logs queries
+CREATE INDEX IF NOT EXISTS idx_instance_logs_instance_id ON instance_logs(instance_id);
+
+-- ============================================================================
+-- TABLE: instance_stats
+-- Description: Performance statistics for database instances
+-- ============================================================================
+CREATE TABLE IF NOT EXISTS instance_stats (
+    id BIGSERIAL PRIMARY KEY,
+    instance_id BIGINT NOT NULL,
+    cpu_usage NUMERIC(5, 2),
+    memory_usage_mb BIGINT,
+    disk_usage_mb BIGINT,
+    uptime_seconds BIGINT,
+    created_at TIMESTAMP NOT NULL,
+    CONSTRAINT fk_instance_stats_instance_id FOREIGN KEY (instance_id) REFERENCES database_instances(id) ON DELETE CASCADE
+);
+
+-- Create index for instance stats queries
+CREATE INDEX IF NOT EXISTS idx_instance_stats_instance_id ON instance_stats(instance_id);
+
+-- ============================================================================
+-- End of V0__create_schema.sql - All tables consolidated (9 tables total)
 -- ============================================================================

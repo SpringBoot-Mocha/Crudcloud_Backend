@@ -39,8 +39,8 @@ public class UserControllerTest extends BaseControllerTest {
         UserResponse response = UserResponse.builder()
                 .userId(userId)
                 .email("test@example.com")
-                .name("Test User")
-                .isOrganization(false)
+                .firstName("Test")
+                .lastName("User")
                 .createdAt(LocalDateTime.now())
                 .build();
 
@@ -52,7 +52,8 @@ public class UserControllerTest extends BaseControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.userId").value(userId))
                 .andExpect(jsonPath("$.email").value("test@example.com"))
-                .andExpect(jsonPath("$.name").value("Test User"));
+                .andExpect(jsonPath("$.firstName").value("Test"))
+                .andExpect(jsonPath("$.lastName").value("User"));
     }
 
     @Test
@@ -74,13 +75,14 @@ public class UserControllerTest extends BaseControllerTest {
         // Arrange
         Long userId = 1L;
         UpdateUserRequest request = new UpdateUserRequest();
-        request.setName("Updated Name");
+        request.setFirstName("Updated");
+        request.setLastName("Name");
 
         UserResponse response = UserResponse.builder()
                 .userId(userId)
                 .email("test@example.com")
-                .name("Updated Name")
-                .isOrganization(false)
+                .firstName("Updated")
+                .lastName("Name")
                 .createdAt(LocalDateTime.now())
                 .build();
 
@@ -91,7 +93,8 @@ public class UserControllerTest extends BaseControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.name").value("Updated Name"));
+                .andExpect(jsonPath("$.firstName").value("Updated"))
+                .andExpect(jsonPath("$.lastName").value("Name"));
     }
 
     @Test
@@ -99,7 +102,7 @@ public class UserControllerTest extends BaseControllerTest {
         // Arrange
         Long userId = 999L;
         UpdateUserRequest request = new UpdateUserRequest();
-        request.setName("Updated Name");
+        request.setFirstName("Updated Name");
 
         when(userService.updateUser(eq(userId), any(UpdateUserRequest.class)))
                 .thenThrow(new ResourceNotFoundException("User", userId));

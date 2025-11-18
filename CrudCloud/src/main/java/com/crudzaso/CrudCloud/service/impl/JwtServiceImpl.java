@@ -3,7 +3,6 @@ package com.crudzaso.CrudCloud.service.impl;
 import com.crudzaso.CrudCloud.service.JwtService;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -45,7 +44,7 @@ public class JwtServiceImpl implements JwtService {
             .subject(username)
             .issuedAt(now)
             .expiration(expiryDate)
-            .signWith(getSigningKey(), SignatureAlgorithm.HS512)
+            .signWith(getSigningKey(), Jwts.SIG.HS512)
             .compact();
 
         log.debug("JWT token generated successfully for username: {}", username);

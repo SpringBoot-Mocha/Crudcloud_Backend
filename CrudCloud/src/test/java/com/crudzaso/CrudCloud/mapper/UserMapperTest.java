@@ -15,7 +15,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * Unit tests for UserMapper using Spring Boot Test
  * Tests the actual MapStruct implementation with Spring context
  * Specifically tests the id to userId field mapping
- * 
+ *
  * Extends BaseIntegrationTest for:
  * - Automatic Spring Boot context loading
  * - PostgreSQL database configuration (test profile)
@@ -35,8 +35,8 @@ class UserMapperTest extends BaseIntegrationTest {
         user = User.builder()
                 .id(1L)
                 .email("test@example.com")
-                .name("Test User")
-                .isOrganization(false)
+                .firstName("Test")
+                .lastName("User")
                 .build();
     }
 
@@ -49,8 +49,8 @@ class UserMapperTest extends BaseIntegrationTest {
         assertNotNull(response);
         assertEquals(user.getId(), response.getUserId()); // Tests the field mapping from id to userId
         assertEquals(user.getEmail(), response.getEmail());
-        assertEquals(user.getName(), response.getName());
-        assertEquals(user.getIsOrganization(), response.getIsOrganization());
+        assertEquals(user.getFirstName(), response.getFirstName());
+        assertEquals(user.getLastName(), response.getLastName());
     }
 
     @Test
@@ -68,8 +68,8 @@ class UserMapperTest extends BaseIntegrationTest {
         User userWithNullFields = User.builder()
                 .id(2L)
                 .email("test2@example.com")
-                .name(null)
-                .isOrganization(true)
+                .firstName(null)
+                .lastName(null)
                 .build();
 
         // When
@@ -79,8 +79,8 @@ class UserMapperTest extends BaseIntegrationTest {
         assertNotNull(response);
         assertEquals(userWithNullFields.getId(), response.getUserId());
         assertEquals(userWithNullFields.getEmail(), response.getEmail());
-        assertNull(response.getName());
-        assertEquals(userWithNullFields.getIsOrganization(), response.getIsOrganization());
+        assertNull(response.getFirstName());
+        assertNull(response.getLastName());
     }
 
     @Test
@@ -89,8 +89,8 @@ class UserMapperTest extends BaseIntegrationTest {
         User userWithEmptyFields = User.builder()
                 .id(3L)
                 .email("")
-                .name("")
-                .isOrganization(false)
+                .firstName("")
+                .lastName("")
                 .build();
 
         // When
@@ -100,60 +100,18 @@ class UserMapperTest extends BaseIntegrationTest {
         assertNotNull(response);
         assertEquals(userWithEmptyFields.getId(), response.getUserId());
         assertEquals(userWithEmptyFields.getEmail(), response.getEmail());
-        assertEquals(userWithEmptyFields.getName(), response.getName());
-        assertEquals(userWithEmptyFields.getIsOrganization(), response.getIsOrganization());
-    }
-
-    @Test
-    void toResponse_UserWithOrganizationTrue_ReturnsResponseWithOrganizationTrue() {
-        // Given
-        User organizationUser = User.builder()
-                .id(4L)
-                .email("org@example.com")
-                .name("Organization User")
-                .isOrganization(true)
-                .build();
-
-        // When
-        UserResponse response = userMapper.toResponse(organizationUser);
-
-        // Then
-        assertNotNull(response);
-        assertEquals(organizationUser.getId(), response.getUserId());
-        assertEquals(organizationUser.getEmail(), response.getEmail());
-        assertEquals(organizationUser.getName(), response.getName());
-        assertTrue(response.getIsOrganization());
-    }
-
-    @Test
-    void toResponse_UserWithOrganizationFalse_ReturnsResponseWithOrganizationFalse() {
-        // Given
-        User individualUser = User.builder()
-                .id(5L)
-                .email("individual@example.com")
-                .name("Individual User")
-                .isOrganization(false)
-                .build();
-
-        // When
-        UserResponse response = userMapper.toResponse(individualUser);
-
-        // Then
-        assertNotNull(response);
-        assertEquals(individualUser.getId(), response.getUserId());
-        assertEquals(individualUser.getEmail(), response.getEmail());
-        assertEquals(individualUser.getName(), response.getName());
-        assertFalse(response.getIsOrganization());
+        assertEquals(userWithEmptyFields.getFirstName(), response.getFirstName());
+        assertEquals(userWithEmptyFields.getLastName(), response.getLastName());
     }
 
     @Test
     void toResponse_UserWithSpecialCharacters_ReturnsCorrectResponse() {
         // Given
         User userWithSpecialChars = User.builder()
-                .id(6L)
+                .id(4L)
                 .email("user+test@example-domain.com")
-                .name("User with Special Chars!@#$%^&*()")
-                .isOrganization(false)
+                .firstName("User with Special!@#$")
+                .lastName("Chars!@#$%^&*()")
                 .build();
 
         // When
@@ -163,21 +121,22 @@ class UserMapperTest extends BaseIntegrationTest {
         assertNotNull(response);
         assertEquals(userWithSpecialChars.getId(), response.getUserId());
         assertEquals(userWithSpecialChars.getEmail(), response.getEmail());
-        assertEquals(userWithSpecialChars.getName(), response.getName());
-        assertEquals(userWithSpecialChars.getIsOrganization(), response.getIsOrganization());
+        assertEquals(userWithSpecialChars.getFirstName(), response.getFirstName());
+        assertEquals(userWithSpecialChars.getLastName(), response.getLastName());
     }
 
     @Test
     void toResponse_UserWithLongValues_ReturnsCorrectResponse() {
         // Given
         String longEmail = "very.long.email.address.with.many.parts.and.subdomains@example-domain-with-long-name.com";
-        String longName = "Very Long User Name With Many Words And Special Characters That Should Be Properly Handled By The Mapper";
+        String longFirstName = "Very Long First Name With Many Words";
+        String longLastName = "And Special Characters That Should Be Properly Handled";
 
         User userWithLongValues = User.builder()
-                .id(7L)
+                .id(5L)
                 .email(longEmail)
-                .name(longName)
-                .isOrganization(true)
+                .firstName(longFirstName)
+                .lastName(longLastName)
                 .build();
 
         // When
@@ -187,8 +146,8 @@ class UserMapperTest extends BaseIntegrationTest {
         assertNotNull(response);
         assertEquals(userWithLongValues.getId(), response.getUserId());
         assertEquals(userWithLongValues.getEmail(), response.getEmail());
-        assertEquals(userWithLongValues.getName(), response.getName());
-        assertEquals(userWithLongValues.getIsOrganization(), response.getIsOrganization());
+        assertEquals(userWithLongValues.getFirstName(), response.getFirstName());
+        assertEquals(userWithLongValues.getLastName(), response.getLastName());
     }
 
     @Test
@@ -197,8 +156,8 @@ class UserMapperTest extends BaseIntegrationTest {
         User userWithMaxId = User.builder()
                 .id(Long.MAX_VALUE)
                 .email("max@example.com")
-                .name("Max ID User")
-                .isOrganization(false)
+                .firstName("Max")
+                .lastName("User")
                 .build();
 
         // When
@@ -208,8 +167,8 @@ class UserMapperTest extends BaseIntegrationTest {
         assertNotNull(response);
         assertEquals(Long.MAX_VALUE, response.getUserId());
         assertEquals(userWithMaxId.getEmail(), response.getEmail());
-        assertEquals(userWithMaxId.getName(), response.getName());
-        assertEquals(userWithMaxId.getIsOrganization(), response.getIsOrganization());
+        assertEquals(userWithMaxId.getFirstName(), response.getFirstName());
+        assertEquals(userWithMaxId.getLastName(), response.getLastName());
     }
 
     @Test
@@ -218,8 +177,8 @@ class UserMapperTest extends BaseIntegrationTest {
         User userWithMinId = User.builder()
                 .id(Long.MIN_VALUE)
                 .email("min@example.com")
-                .name("Min ID User")
-                .isOrganization(false)
+                .firstName("Min")
+                .lastName("User")
                 .build();
 
         // When
@@ -229,8 +188,8 @@ class UserMapperTest extends BaseIntegrationTest {
         assertNotNull(response);
         assertEquals(Long.MIN_VALUE, response.getUserId());
         assertEquals(userWithMinId.getEmail(), response.getEmail());
-        assertEquals(userWithMinId.getName(), response.getName());
-        assertEquals(userWithMinId.getIsOrganization(), response.getIsOrganization());
+        assertEquals(userWithMinId.getFirstName(), response.getFirstName());
+        assertEquals(userWithMinId.getLastName(), response.getLastName());
     }
 
     @Test
@@ -239,8 +198,8 @@ class UserMapperTest extends BaseIntegrationTest {
         User userWithZeroId = User.builder()
                 .id(0L)
                 .email("zero@example.com")
-                .name("Zero ID User")
-                .isOrganization(false)
+                .firstName("Zero")
+                .lastName("User")
                 .build();
 
         // When
@@ -250,7 +209,7 @@ class UserMapperTest extends BaseIntegrationTest {
         assertNotNull(response);
         assertEquals(0L, response.getUserId());
         assertEquals(userWithZeroId.getEmail(), response.getEmail());
-        assertEquals(userWithZeroId.getName(), response.getName());
-        assertEquals(userWithZeroId.getIsOrganization(), response.getIsOrganization());
+        assertEquals(userWithZeroId.getFirstName(), response.getFirstName());
+        assertEquals(userWithZeroId.getLastName(), response.getLastName());
     }
 }
