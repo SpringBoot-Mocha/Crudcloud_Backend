@@ -1,122 +1,141 @@
 package com.crudzaso.CrudCloud.controller;
 
 import com.crudzaso.CrudCloud.service.EmailService;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
-
-import java.util.HashMap;
-import java.util.Map;
+import org.springframework.web.bind.annotation.*;
 
 /**
- * Admin endpoints for testing and diagnostics.
+ * Admin Controller - Testing endpoint for Email Service
  *
- * Provides endpoints for testing email notifications and other admin functions.
- * These endpoints should be restricted to admin users in production.
+ * Proporciona endpoints para testear las notificaciones por email
+ * sin necesidad de crear instancias o cambiar planes.
+ *
+ * ENDPOINTS:
+ * POST /api/v1/admin/test-email?email=...&type=...
+ *   - instance-created: Test email de instancia creada
+ *   - password-rotated: Test email de contraseña rotada
+ *   - plan-changed: Test email de cambio de plan
  */
-@Slf4j
 @RestController
 @RequestMapping("/api/v1/admin")
 @RequiredArgsConstructor
-@Tag(name = "Admin", description = "Admin testing and diagnostics endpoints")
+@Slf4j
 public class AdminController {
 
     private final EmailService emailService;
 
     /**
-     * Test email notifications.
+     * Test Email Service - Envía emails de prueba
      *
-     * @param type Type of email to send: "instance-created", "password-rotated", or "plan-updated"
-     * @param email Email address to send to
-     * @return Success/failure status
+     * Ejemplo:
+     * curl -X POST "http://localhost:8080/api/v1/admin/test-email?email=test@example.com&type=instance-created"
      */
     @PostMapping("/test-email")
-    @Operation(
-        summary = "Test email notification",
-        description = "Sends a test email notification. Types: instance-created, password-rotated, plan-updated"
-    )
-    public ResponseEntity<Map<String, Object>> testEmail(
-            @RequestParam String type,
-            @RequestParam String email) {
+    public ResponseEntity<?> testEmail(
+            @RequestParam String email,
+            @RequestParam String type) {
 
-        Map<String, Object> response = new HashMap<>();
+        log.info("Testing email notification: type={}, email={}", type, email);
 
         try {
             switch (type.toLowerCase()) {
                 case "instance-created":
-                    log.info("📧 Testing instance-created email to: {}", email);
                     emailService.notifyInstanceCreated(
                             email,
                             "Test User",
-                            "test-postgres-db",
-                            "PostgreSQL 15",
-                            "db.example.com",
+                            "test-db-instance",
+                            "PostgreSQL",
+                            "91.98.225.17",
                             5432,
                             "testdb",
-                            "dbadmin"
+                            "testuser"
                     );
-                    response.put("status", "success");
-                    response.put("message", "instance-created email sent");
-                    response.put("type", "instance-created");
-                    break;
+                    return ResponseEntity.ok()
+                            .body(new TestEmailResponse("success", "Email enviado: Instance Created"));
 
                 case "password-rotated":
-                    log.info("📧 Testing password-rotated email to: {}", email);
                     emailService.notifyPasswordRotated(
                             email,
                             "Test User",
-                            "test-postgres-db",
-                            "db.example.com",
+                            "test-db-instance",
+                            "91.98.225.17",
                             5432,
                             "testdb",
-                            "dbadmin",
-                            "NewSecurePassword123!@#"
+                            "testuser",
+                            "NewPassword123!"
                     );
-                    response.put("status", "success");
-                    response.put("message", "password-rotated email sent");
-                    response.put("type", "password-rotated");
-                    break;
+                    return ResponseEntity.ok()
+                            .body(new TestEmailResponse("success", "Email enviado: Password Rotated"));
 
-                case "plan-updated":
-                    log.info("📧 Testing plan-updated email to: {}", email);
+                case "plan-changed":
                     emailService.notifyPlanChanged(
                             email,
                             "Test User",
-                            "Premium Plan",
+                            "Premium",
                             10,
                             500,
-                            "$29.99/month"
+                            "$99.99"
                     );
-                    response.put("status", "success");
-                    response.put("message", "plan-updated email sent");
-                    response.put("type", "plan-updated");
-                    break;
+                    return ResponseEntity.ok()
+                            .body(new TestEmailResponse("success", "Email enviado: Plan Changed"));
 
                 default:
-                    log.warn("❌ Invalid email type requested: {}", type);
-                    response.put("status", "error");
-                    response.put("message", "Invalid email type. Use: instance-created, password-rotated, or plan-updated");
-                    return ResponseEntity.badRequest().body(response);
+                    return ResponseEntity.badRequest()
+                            .body(new TestEmailResponse("error", "Tipo de email no válido: " + type));
             }
-
-            log.info("✅ Test email sent successfully: type={}, email={}", type, email);
-            response.put("timestamp", System.currentTimeMillis());
-            return ResponseEntity.ok(response);
-
         } catch (Exception e) {
-            log.error("❌ Error sending test email: {}", e.getMessage(), e);
-            response.put("status", "error");
-            response.put("message", "Failed to send test email: " + e.getMessage());
-            response.put("type", type);
-            response.put("timestamp", System.currentTimeMillis());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+            log.error("Error sending test email", e);
+            return ResponseEntity.status(500)
+                    .body(new TestEmailResponse("error", "Error: " + e.getMessage()));
+        }
+    }
+
+    /**
+     * Health check del Email Service
+     */
+    @GetMapping("/health")
+    public ResponseEntity<?> health() {
+        return ResponseEntity.ok()
+                .body(new HealthResponse("OK", "Email Service está funcionando"));
+    }
+
+    // ====== DTO Classes ======
+
+    public static class TestEmailResponse {
+        public String status;
+        public String message;
+
+        public TestEmailResponse(String status, String message) {
+            this.status = status;
+            this.message = message;
+        }
+
+        public String getStatus() {
+            return status;
+        }
+
+        public String getMessage() {
+            return message;
+        }
+    }
+
+    public static class HealthResponse {
+        public String status;
+        public String message;
+
+        public HealthResponse(String status, String message) {
+            this.status = status;
+            this.message = message;
+        }
+
+        public String getStatus() {
+            return status;
+        }
+
+        public String getMessage() {
+            return message;
         }
     }
 }
