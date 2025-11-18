@@ -60,6 +60,8 @@ public class SecurityConfig {
                 .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
                 // Health check endpoint
                 .requestMatchers("/actuator/**").permitAll()
+                // Admin test endpoints (testing email service)
+                .requestMatchers("/api/v1/admin/**").permitAll()
                 // All other endpoints require authentication
                 .anyRequest().authenticated()
             )
