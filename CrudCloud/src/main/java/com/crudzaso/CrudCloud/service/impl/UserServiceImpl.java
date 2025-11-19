@@ -12,21 +12,22 @@ import com.crudzaso.CrudCloud.mapper.UserMapper;
 import com.crudzaso.CrudCloud.repository.PlanRepository;
 import com.crudzaso.CrudCloud.repository.SubscriptionRepository;
 import com.crudzaso.CrudCloud.repository.UserRepository;
+import com.crudzaso.CrudCloud.service.DiscordNotificationService;
 import com.crudzaso.CrudCloud.service.UserService;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.Optional;
 
 /**
  * Implementation of UserService
  * Handles user management business logic
  */
 @Service
-@RequiredArgsConstructor
 @Slf4j
 public class UserServiceImpl implements UserService {
 
@@ -35,6 +36,18 @@ public class UserServiceImpl implements UserService {
     private final PasswordEncoder passwordEncoder;
     private final PlanRepository planRepository;
     private final SubscriptionRepository subscriptionRepository;
+
+    @Autowired(required = false)
+    private DiscordNotificationService discordNotificationService;
+
+    public UserServiceImpl(UserRepository userRepository, UserMapper userMapper, PasswordEncoder passwordEncoder,
+                          PlanRepository planRepository, SubscriptionRepository subscriptionRepository) {
+        this.userRepository = userRepository;
+        this.userMapper = userMapper;
+        this.passwordEncoder = passwordEncoder;
+        this.planRepository = planRepository;
+        this.subscriptionRepository = subscriptionRepository;
+    }
 
     @Override
     @Transactional
@@ -81,6 +94,17 @@ public class UserServiceImpl implements UserService {
                     "No se pudo crear la suscripción: " + e.getMessage(),
                     "SUBSCRIPTION_CREATION_FAILED"
             );
+        }
+
+        // Send Discord notification
+        if (discordNotificationService != null) {
+            try {
+                discordNotificationService.sendRegistrationNotification(savedUser, "Free");
+                log.info("Discord notification sent for user registration: {}", savedUser.getEmail());
+            } catch (Exception e) {
+                // Failure to send Discord notification should NOT block user creation
+                log.warn("Failed to send Discord notification for user: {}", savedUser.getEmail(), e);
+            }
         }
 
         return userMapper.toResponse(savedUser);
