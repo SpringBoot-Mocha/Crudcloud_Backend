@@ -33,21 +33,29 @@ build/
 .vscode/
 
 ### ============================================================================
-### SENSITIVE FILES - IMPORTANT!
+### ENVIRONMENT CONFIGURATION - Development & Production
 ### ============================================================================
-# Archivos con secretos y credenciales - NO SUBIR A GIT
-application-local.properties
+# Production configuration (NEVER commit with real secrets)
 application-prod.properties
+
+# Development configuration (can have secrets, but should use environment variables)
 application-dev.properties
-*.env
+
+### ============================================================================
+### ENVIRONMENT VARIABLES FILES - CRITICAL SECURITY!
+### ============================================================================
+# Environment variable files - MUST NEVER be committed with real values
+# Always use .env.example as template and copy to .env with actual values
+.env
 .env.local
+.env.development
 .env.production
+.env.*.local
 
-# Credenciales de Mercado Pago
+# Credentials and secrets
 mercadopago-credentials.json
-
-# Claves JWT
 jwt-keys/
+secrets/
 
 ### ============================================================================
 ### LOGS

@@ -12,6 +12,7 @@ import com.crudzaso.CrudCloud.mapper.UserMapper;
 import com.crudzaso.CrudCloud.repository.PlanRepository;
 import com.crudzaso.CrudCloud.repository.SubscriptionRepository;
 import com.crudzaso.CrudCloud.repository.UserRepository;
+import com.crudzaso.CrudCloud.service.DiscordNotificationService;
 import com.crudzaso.CrudCloud.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,8 +23,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 
 /**
- * Implementation of UserService
- * Handles user management business logic
+ * Implementation of UserService.
+ * Handles user management business logic including registration, updates, and Discord notifications.
  */
 @Service
 @RequiredArgsConstructor
@@ -35,6 +36,7 @@ public class UserServiceImpl implements UserService {
     private final PasswordEncoder passwordEncoder;
     private final PlanRepository planRepository;
     private final SubscriptionRepository subscriptionRepository;
+    private final DiscordNotificationService discordNotificationService;
 
     @Override
     @Transactional
@@ -81,6 +83,17 @@ public class UserServiceImpl implements UserService {
                     "No se pudo crear la suscripción: " + e.getMessage(),
                     "SUBSCRIPTION_CREATION_FAILED"
             );
+        }
+
+        // ============================================================================
+        // SEND DISCORD NOTIFICATION
+        // ============================================================================
+        try {
+            discordNotificationService.sendRegistrationNotification(savedUser, "Free");
+            log.info("Discord notification sent for user registration: {}", savedUser.getEmail());
+        } catch (Exception e) {
+            // Failure to send Discord notification should NOT block user creation
+            log.warn("Failed to send Discord notification for user: {}", savedUser.getEmail(), e);
         }
 
         return userMapper.toResponse(savedUser);
