@@ -1,0 +1,183 @@
+version: '3.9'
+
+services:
+  # ============================================================================
+  # BACKEND SERVICE - Spring Boot Java 21
+  # ============================================================================
+  backend:
+    build:
+      context: ./Crudcloud_Backend/CrudCloud
+      dockerfile: Dockerfile
+    container_name: crudcloud-backend
+    ports:
+      - "8090:8080"
+    environment:
+      # Database Configuration
+      DATABASE_URL: jdbc:postgresql://postgres:5432/CrudCloud
+      DATABASE_USERNAME: postgres
+      DATABASE_PASSWORD: ${DATABASE_PASSWORD:-Mocha2025Riwi+}
+
+      # Server Configuration
+      SERVER_PORT: "8080"
+
+      # JWT Configuration
+      JWT_SECRET: ${JWT_SECRET:-YW9lbmZ3b2VuZm93ZW5mb3dlbmZvd2VuZm93ZW5mb3dlbmZvd2VuZm93ZW5mb3dlbmZvd2VuZm93ZW5mb3dlbmZvd2VuZm93ZW5mb3dlbmZvd2VuZm93ZW5mb3dlbmZvd2VuZm93ZW4=}
+      JWT_EXPIRATION: "86400000"
+
+      # SSH Configuration (for Docker provisioning)
+      SSH_HOST: ${SSH_HOST:-91.98.225.17}
+      SSH_PORT: ${SSH_PORT:-22}
+      SSH_USERNAME: ${SSH_USERNAME:-root}
+      SSH_PASSWORD: ${SSH_PASSWORD:-javamochapm--3306}
+      SSH_KEY_PATH: /root/.ssh/id_rsa
+      SSH_CONNECTION_TIMEOUT: "30000"
+      SSH_READ_TIMEOUT: "30000"
+
+      # Database Instance Settings
+      DATABASE_HOST: 91.98.225.17
+      PROVISIONING_ENABLED: "true"
+
+      # Email Configuration
+      MAIL_HOST: ${MAIL_HOST:-smtp.gmail.com}
+      MAIL_PORT: ${MAIL_PORT:-587}
+      MAIL_USERNAME: ${MAIL_USERNAME:-crudcloudnotificaciones@gmail.com}
+      MAIL_PASSWORD: ${MAIL_PASSWORD:-omiaewghdaxhdgdl}
+      MAIL_FROM: ${MAIL_FROM:-noreply@crudcloud.com}
+      MAIL_FROM_NAME: ${MAIL_FROM_NAME:-CrudCloud}
+
+      # OAuth Configuration
+      GOOGLE_OAUTH_CLIENT_ID: ${GOOGLE_OAUTH_CLIENT_ID:-60736221772-qu02faouq22nm1747c09ivtjb0m8298s.apps.googleusercontent.com}
+      GOOGLE_OAUTH_CLIENT_SECRET: ${GOOGLE_OAUTH_CLIENT_SECRET:-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}
+      GITHUB_OAUTH_CLIENT_ID: ${GITHUB_OAUTH_CLIENT_ID:-Ov23litGnx91sQu0tdPN}
+      GITHUB_OAUTH_CLIENT_SECRET: ${GITHUB_OAUTH_CLIENT_SECRET:-ffe34ddef199de6998e27a0455a8afd1ecadede0}
+
+      # Mercado Pago Configuration
+      MERCADOPAGO_ACCESS_TOKEN: ${MERCADOPAGO_ACCESS_TOKEN:-YOUR_TOKEN_HERE}
+      MERCADOPAGO_PUBLIC_KEY: ${MERCADOPAGO_PUBLIC_KEY:-YOUR_KEY_HERE}
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+    networks:
+      - crudcloud-network
+
+    restart: unless-stopped
+
+    # Volumes for logs
+    volumes:
+      - backend-logs:/app/logs
+
+    # Health check
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/api/v1/plans"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # ============================================================================
+  # FRONTEND SERVICE - React + Vite + Nginx
+  # ============================================================================
+  frontend:
+    build:
+      context: ./Crudcloud_Frontend
+      dockerfile: Dockerfile
+    container_name: crudcloud-frontend
+    ports:
+      - "3001:80"
+
+    networks:
+      - crudcloud-network
+
+    restart: unless-stopped
+
+    # Volumes for logs
+    volumes:
+      - frontend-logs:/var/log/nginx
+
+    # Health check
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:80/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+
+  # ============================================================================
+  # DOCUMENTATION SERVICE - Docusaurus + Nginx
+  # ============================================================================
+  docs:
+    build:
+      context: .
+      dockerfile: CrudCloud-Docs/Dockerfile
+    container_name: crudcloud-docs
+    ports:
+      - "3002:80"
+
+    networks:
+      - crudcloud-network
+
+    restart: unless-stopped
+
+    # Volumes for logs
+    volumes:
+      - docs-logs:/var/log/nginx
+
+    # Health check
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # ============================================================================
+  # DATABASE SERVICE - PostgreSQL 15
+  # ============================================================================
+  postgres:
+    image: postgres:15-alpine
+    container_name: crudcloud-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD:-Mocha2025Riwi+}
+      POSTGRES_DB: CrudCloud
+
+    ports:
+      - "5433:5432"
+
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+
+    networks:
+      - crudcloud-network
+
+    restart: unless-stopped
+
+    # Health check
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+# ============================================================================
+# NETWORKS
+# ============================================================================
+networks:
+  crudcloud-network:
+    driver: bridge
+
+# ============================================================================
+# VOLUMES
+# ============================================================================
+volumes:
+  postgres-data:
+    driver: local
+  backend-logs:
+    driver: local
+  frontend-logs:
+    driver: local
+  docs-logs:
+    driver: local
