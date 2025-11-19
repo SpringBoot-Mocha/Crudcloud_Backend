@@ -48,7 +48,7 @@ CREATE TABLE plans (
     id BIGSERIAL PRIMARY KEY,
     name VARCHAR(100) UNIQUE NOT NULL,
     max_instances INT NOT NULL CHECK (max_instances > 0),
-    max_storage_gb BIGINT NOT NULL DEFAULT 100,
+    max_storage_mb BIGINT NOT NULL DEFAULT 2048,
     price_per_month DECIMAL(10, 2) NOT NULL DEFAULT 0 CHECK (price_per_month >= 0),
     description TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -58,11 +58,10 @@ CREATE TABLE plans (
 CREATE INDEX idx_plans_name ON plans(name);
 
 -- Insertar planes por defecto
-INSERT INTO plans (name, max_instances, max_storage_gb, price_per_month, description) VALUES
-('Free', 2, 10, 0.00, 'Free plan with limited instances and storage'),
-('Standard', 5, 100, 15.00, 'Standard plan with moderate instances and storage'),
-
-('Premium', 10, 500, 50.00, 'Premium plan with maximum instances and storage');
+INSERT INTO plans (name, max_instances, max_storage_mb, price_per_month, description) VALUES
+('Free', 2, 150, 0.00, 'Plan Gratuito - 2 instancias, 150 MB almacenamiento'),
+('Standard', 5, 750, 12000.00, 'Plan Estándar - 5 instancias, 750 MB almacenamiento'),
+('Premium', 10, 2048, 39900.00, 'Plan Premium - 10 instancias, 2048 MB almacenamiento');
 
 -- ============================================================================
 -- TEST DATA - USUARIOS DE PRUEBA

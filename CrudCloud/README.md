@@ -257,21 +257,110 @@ java -jar target/CrudCloud-0.0.1-SNAPSHOT.jar --spring.profiles.active=prod
 
 ### Docker Deployment
 
-Build Docker image using Jib:
+#### Quick Start with Docker Compose
+
+The application is production-ready with Docker. Use the provided `docker-compose.yml` in the root directory:
+
+```bash
+# Navigate to root directory containing docker-compose.yml
+cd ..  # Go to Crudcloud_Backend root
+
+# Build and start all services
+docker compose up -d --build backend
+
+# View logs
+docker compose logs -f backend
+
+# Verify health
+docker ps | grep crudcloud-backend
+```
+
+#### Docker Build Configuration
+
+The Dockerfile uses a multi-stage build for optimal image size:
+
+1. **Build Stage**: Maven 3.9.5 on Java 21
+   - Compiles source code
+   - Runs unit tests
+   - Creates executable JAR with `mvn clean package -DskipTests`
+
+2. **Runtime Stage**: Java 21 (Eclipse Temurin) on Alpine
+   - Runs the JAR with optimized memory settings
+   - Includes health checks
+   - Exposes port 8080
+
+#### Environment Configuration for Docker
+
+The application requires these environment variables for Docker deployment:
+
+```env
+# Database Configuration
+DATABASE_URL=jdbc:postgresql://postgres:5432/CrudCloud
+DATABASE_USERNAME=postgres
+DATABASE_PASSWORD=your-secure-password
+
+# JWT Configuration
+JWT_SECRET=your-super-secure-secret-key-64-chars-minimum
+JWT_EXPIRATION=86400000
+
+# SSH Configuration (for Docker container provisioning)
+SSH_HOST=your-vps-ip
+SSH_PORT=22
+SSH_USERNAME=root
+SSH_PASSWORD=your-ssh-password
+SSH_KEY_PATH=/root/.ssh/id_rsa
+SSH_CONNECTION_TIMEOUT=30000
+SSH_READ_TIMEOUT=30000
+
+# Database Instance Settings
+DATABASE_HOST=your-vps-ip
+PROVISIONING_ENABLED=true
+
+# Email Configuration
+MAIL_HOST=smtp.gmail.com
+MAIL_PORT=587
+MAIL_USERNAME=your-gmail@gmail.com
+MAIL_PASSWORD=your-app-password
+MAIL_FROM=noreply@crudcloud.com
+MAIL_FROM_NAME=CrudCloud
+
+# OAuth Configuration
+GOOGLE_OAUTH_CLIENT_ID=your-google-client-id
+GOOGLE_OAUTH_CLIENT_SECRET=your-google-secret
+GITHUB_OAUTH_CLIENT_ID=your-github-client-id
+GITHUB_OAUTH_CLIENT_SECRET=your-github-secret
+
+# Payment Processing
+MERCADOPAGO_ACCESS_TOKEN=your-mercadopago-token
+MERCADOPAGO_PUBLIC_KEY=your-mercadopago-public-key
+```
+
+#### Manual Docker Build
 
 ```bash
 # Build to Docker daemon
 mvn compile jib:dockerBuild
 
-# Run the container
-docker run -p 8080:8080 \
-  -e SPRING_DATASOURCE_URL=jdbc:postgresql://host.docker.internal:5432/crudcloud \
+# Run the container with environment variables
+docker run -d \
+  --name crudcloud-backend \
+  -p 8090:8080 \
+  --network crudcloud-network \
+  -e SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/CrudCloud \
   -e SPRING_DATASOURCE_USERNAME=postgres \
-  -e SPRING_DATASOURCE_PASSWORD=postgres \
+  -e SPRING_DATASOURCE_PASSWORD=your-password \
   -e JWT_SECRET=your-secret-key \
   -e MERCADOPAGO_ACCESS_TOKEN=your-token \
   crudcloud:latest
 ```
+
+#### Production Deployment Notes
+
+- **Database Network**: Use Docker network bridge to communicate with PostgreSQL service
+- **Health Checks**: Container checks `/api/v1/plans` endpoint every 30 seconds
+- **Reverse Proxy**: Use Nginx for SSL/TLS termination and port forwarding
+- **Logging**: Logs available via `docker logs crudcloud-backend`
+- **Persistence**: Use named volumes for database data persistence
 
 ---
 
@@ -443,16 +532,72 @@ http://localhost:8080/api/v1
 
 ### API Documentation
 
-Interactive API documentation is available via Swagger UI:
+CrudCloud provides comprehensive API documentation through **Swagger UI** (OpenAPI 3.0), automatically generated from your REST controllers.
 
+#### Accessing Swagger UI
+
+**Local Development:**
 ```
 http://localhost:8080/swagger-ui.html
 ```
 
-OpenAPI specification:
+**Production Deployment** (Example domains):
+```
+https://api.mocha.crudzaso.com/swagger-ui.html
+```
 
+**OpenAPI Specification (JSON):**
 ```
 http://localhost:8080/v3/api-docs
+```
+
+**OpenAPI YAML:**
+```
+http://localhost:8080/v3/api-docs.yaml
+```
+
+#### Using Swagger UI
+
+1. **Navigate** to the Swagger UI URL in your browser
+2. **Explore Endpoints**: All REST endpoints are listed with their methods (GET, POST, PUT, DELETE)
+3. **Try It Out**: Click "Try it out" button on any endpoint to test with real parameters
+4. **Authentication**: Click the "Authorize" button and paste your JWT Bearer token
+5. **View Response**: See request/response examples and HTTP status codes
+
+#### Example: Testing Login Endpoint
+
+1. Expand `POST /api/v1/auth/login`
+2. Click "Try it out"
+3. Enter credentials:
+   ```json
+   {
+     "email": "user@example.com",
+     "password": "SecurePass123!"
+   }
+   ```
+4. Click "Execute"
+5. Copy the JWT token from the response
+6. Click "Authorize" button (lock icon at top)
+7. Paste token: `Bearer {your-token-here}`
+8. Now you can test protected endpoints
+
+#### Key Sections in Swagger
+
+- **Authentication** - Login/Register endpoints
+- **User Management** - User CRUD operations
+- **Database Instances** - Provision and manage databases
+- **Subscriptions** - Plan management and upgrades
+- **Payments** - Payment processing and webhooks
+- **Plans & Engines** - Public endpoints for browsing options
+
+#### Disabled in Production
+
+For security reasons, you may want to disable Swagger UI in production:
+
+```properties
+# application.properties
+springdoc.swagger-ui.enabled=true  # Set to false in production
+springdoc.api-docs.enabled=true    # Set to false in production
 ```
 
 ---
