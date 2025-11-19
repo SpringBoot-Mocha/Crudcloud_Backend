@@ -61,6 +61,7 @@ CREATE INDEX idx_plans_name ON plans(name);
 INSERT INTO plans (name, max_instances, max_storage_gb, price_per_month, description) VALUES
 ('Free', 2, 10, 0.00, 'Free plan with limited instances and storage'),
 ('Standard', 5, 100, 15.00, 'Standard plan with moderate instances and storage'),
+
 ('Premium', 10, 500, 50.00, 'Premium plan with maximum instances and storage');
 
 -- ============================================================================

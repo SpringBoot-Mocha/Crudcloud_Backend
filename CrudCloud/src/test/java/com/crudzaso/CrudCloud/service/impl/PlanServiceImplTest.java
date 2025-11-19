@@ -53,27 +53,27 @@ class PlanServiceImplTest {
                 .id(1L)
                 .name("FREE")
                 .pricePerMonth(BigDecimal.ZERO)
-                .maxInstances(1)
-                .maxStorageGB(1L)
-                .description("Free plan for testing")
+                .maxInstances(2)
+                .maxStorageMB(150L)
+                .description("Plan Gratuito - 2 instancias, 150 MB almacenamiento")
                 .build();
 
         standardPlan = Plan.builder()
                 .id(2L)
                 .name("STANDARD")
-                .pricePerMonth(new BigDecimal("9.99"))
+                .pricePerMonth(new BigDecimal("12000.00"))
                 .maxInstances(5)
-                .maxStorageGB(100L)
-                .description("Standard plan for small teams")
+                .maxStorageMB(750L)
+                .description("Plan Estándar - 5 instancias, 750 MB almacenamiento")
                 .build();
 
         premiumPlan = Plan.builder()
                 .id(3L)
                 .name("PREMIUM")
-                .pricePerMonth(new BigDecimal("29.99"))
-                .maxInstances(20)
-                .maxStorageGB(500L)
-                .description("Premium plan for enterprises")
+                .pricePerMonth(new BigDecimal("39900.00"))
+                .maxInstances(10)
+                .maxStorageMB(2048L)
+                .description("Plan Premium - 10 instancias, 2048 MB almacenamiento")
                 .build();
 
         // Setup test plan responses
@@ -81,27 +81,27 @@ class PlanServiceImplTest {
                 .id(1L)
                 .name("FREE")
                 .priceMonth(BigDecimal.ZERO)
-                .maxInstances(1)
-                .maxStorageGB(1L)
-                .description("Free plan for testing")
+                .maxInstances(2)
+                .maxStorageMB(150L)
+                .description("Plan Gratuito - 2 instancias, 150 MB almacenamiento")
                 .build();
 
         standardPlanResponse = PlanResponse.builder()
                 .id(2L)
                 .name("STANDARD")
-                .priceMonth(new BigDecimal("9.99"))
+                .priceMonth(new BigDecimal("12000.00"))
                 .maxInstances(5)
-                .maxStorageGB(100L)
-                .description("Standard plan for small teams")
+                .maxStorageMB(750L)
+                .description("Plan Estándar - 5 instancias, 750 MB almacenamiento")
                 .build();
 
         premiumPlanResponse = PlanResponse.builder()
                 .id(3L)
                 .name("PREMIUM")
-                .priceMonth(new BigDecimal("29.99"))
-                .maxInstances(20)
-                .maxStorageGB(500L)
-                .description("Premium plan for enterprises")
+                .priceMonth(new BigDecimal("39900.00"))
+                .maxInstances(10)
+                .maxStorageMB(2048L)
+                .description("Plan Premium - 10 instancias, 2048 MB almacenamiento")
                 .build();
     }
 
@@ -174,9 +174,9 @@ class PlanServiceImplTest {
         assertNotNull(result);
         assertEquals(2L, result.getId());
         assertEquals("STANDARD", result.getName());
-        assertEquals(new BigDecimal("9.99"), result.getPriceMonth());
+        assertEquals(new BigDecimal("12000.00"), result.getPriceMonth());
         assertEquals(5, result.getMaxInstances());
-        assertEquals(100L, result.getMaxStorageGB());
+        assertEquals(750L, result.getMaxStorageMB());
 
         verify(planRepository).findById(2L);
         verify(planMapper).toResponse(standardPlan);
@@ -233,9 +233,9 @@ class PlanServiceImplTest {
         assertNotNull(result);
         assertEquals(3L, result.getId());
         assertEquals("PREMIUM", result.getName());
-        assertEquals(new BigDecimal("29.99"), result.getPriceMonth());
-        assertEquals(20, result.getMaxInstances());
-        assertEquals(500L, result.getMaxStorageGB());
+        assertEquals(new BigDecimal("39900.00"), result.getPriceMonth());
+        assertEquals(10, result.getMaxInstances());
+        assertEquals(2048L, result.getMaxStorageMB());
 
         verify(planRepository).findById(3L);
         verify(planMapper).toResponse(premiumPlan);

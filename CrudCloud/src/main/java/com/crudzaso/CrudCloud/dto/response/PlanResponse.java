@@ -24,7 +24,7 @@ public class PlanResponse {
 
     private Integer maxInstances;
 
-    private Long maxStorageGB;
+    private Long maxStorageMB;
 
     private BigDecimal priceMonth;
 

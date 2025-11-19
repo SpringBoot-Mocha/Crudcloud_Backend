@@ -67,7 +67,7 @@ class SubscriptionServiceImplTest {
                 .name("STANDARD")
                 .pricePerMonth(new BigDecimal("9.99"))
                 .maxInstances(5)
-                .maxStorageGB(100L)
+                .maxStorageMB(100L)
                 .build();
 
         subscription = Subscription.builder()

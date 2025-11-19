@@ -34,8 +34,8 @@ public class Plan {
     @Column(name = "max_instances", nullable = false)
     private Integer maxInstances;
 
-    @Column(name = "max_storage_gb", nullable = false)
-    private Long maxStorageGB;
+    @Column(name = "max_storage_mb", nullable = false)
+    private Long maxStorageMB;
 
     @Column(name = "price_per_month", nullable = false, precision = 10, scale = 2)
     private BigDecimal pricePerMonth;

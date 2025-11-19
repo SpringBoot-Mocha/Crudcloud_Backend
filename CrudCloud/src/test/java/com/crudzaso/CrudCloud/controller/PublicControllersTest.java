@@ -112,18 +112,18 @@ public class PublicControllersTest extends BasePublicControllerTest {
                 PlanResponse.builder()
                         .id(1L)
                         .name("Free")
-                        .maxInstances(1)
-                        .maxStorageGB(10L)
+                        .maxInstances(2)
+                        .maxStorageMB(150L)
                         .priceMonth(BigDecimal.ZERO)
-                        .description("Free tier")
+                        .description("Plan Gratuito - 2 instancias, 150 MB almacenamiento")
                         .build(),
                 PlanResponse.builder()
                         .id(2L)
-                        .name("Pro")
+                        .name("Standard")
                         .maxInstances(5)
-                        .maxStorageGB(100L)
-                        .priceMonth(new BigDecimal("29.99"))
-                        .description("Professional tier")
+                        .maxStorageMB(750L)
+                        .priceMonth(new BigDecimal("12000.00"))
+                        .description("Plan Estándar - 5 instancias, 750 MB almacenamiento")
                         .build()
         );
 
@@ -135,7 +135,7 @@ public class PublicControllersTest extends BasePublicControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].id").value(1L))
                 .andExpect(jsonPath("$[0].name").value("Free"))
-                .andExpect(jsonPath("$[1].name").value("Pro"));
+                .andExpect(jsonPath("$[1].name").value("Standard"));
     }
 
     @Test
@@ -143,11 +143,11 @@ public class PublicControllersTest extends BasePublicControllerTest {
         // Arrange
         PlanResponse plan = PlanResponse.builder()
                 .id(2L)
-                .name("Pro")
+                .name("Standard")
                 .maxInstances(5)
-                .maxStorageGB(100L)
-                .priceMonth(new BigDecimal("29.99"))
-                .description("Professional tier")
+                .maxStorageMB(750L)
+                .priceMonth(new BigDecimal("12000.00"))
+                .description("Plan Estándar - 5 instancias, 750 MB almacenamiento")
                 .build();
 
         when(planService.getPlanById(2L)).thenReturn(plan);
@@ -156,7 +156,7 @@ public class PublicControllersTest extends BasePublicControllerTest {
         mockMvc.perform(get("/api/v1/plans/{id}", 2L)
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.name").value("Pro"))
+                .andExpect(jsonPath("$.name").value("Standard"))
                 .andExpect(jsonPath("$.maxInstances").value(5));
     }
 

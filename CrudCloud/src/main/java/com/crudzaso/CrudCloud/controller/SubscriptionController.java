@@ -16,6 +16,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -49,6 +50,23 @@ public class SubscriptionController {
         log.info("Creating/upgrading subscription for user: {}", request.getUserId());
         SubscriptionResponse response = subscriptionService.createSubscription(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    /**
+     * Update user plan with email notification.
+     *
+     * @param userId the user ID
+     * @param planId the new plan ID
+     * @return updated subscription response
+     */
+    @PutMapping("/{userId}/plan/{planId}")
+    @Operation(summary = "Update user plan", description = "Updates user subscription plan with automatic email notification")
+    public ResponseEntity<SubscriptionResponse> updatePlan(
+            @PathVariable Long userId,
+            @PathVariable Long planId) {
+        log.info("Updating plan for user: {} to plan: {}", userId, planId);
+        SubscriptionResponse response = subscriptionService.updatePlan(userId, planId);
+        return ResponseEntity.ok(response);
     }
 
     /**

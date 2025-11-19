@@ -17,6 +17,7 @@ import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -128,12 +129,13 @@ public class OAuthServiceImpl implements OAuthService {
 
             // Make request to GitHub API to get user information
             HttpHeaders headers = new HttpHeaders();
-            headers.set("Authorization", "Bearer " + accessToken);
+            headers.set("Authorization", "token " + accessToken);
             headers.set("Accept", "application/vnd.github+json");
             headers.set("X-GitHub-Api-Version", "2022-11-28");
 
             HttpEntity<String> entity = new HttpEntity<>(headers);
 
+            log.info("Calling GitHub /user endpoint with access token");
             ResponseEntity<String> response = restTemplate.exchange(
                     "https://api.github.com/user",
                     HttpMethod.GET,
@@ -156,23 +158,63 @@ public class OAuthServiceImpl implements OAuthService {
 
             // If email is null (user has private email in GitHub), fetch it from /user/emails endpoint
             if (email == null || email.isEmpty()) {
-                log.info("Email is null/empty, attempting to fetch from /user/emails endpoint");
+                log.info("📧 Email is null/empty from /user endpoint, attempting to fetch from /user/emails endpoint for user: {}", login);
                 email = fetchGitHubPrimaryEmail(accessToken);
-                log.info("Email fetched from /user/emails: {}", email);
+                log.info("📧 Result from /user/emails endpoint: email = {}", email != null ? email : "NULL");
             }
 
-            // If still no email, use login as fallback
+            // If still no email, reject the login - do NOT generate synthetic email
+            // Synthetic emails like 'login@github.com' are incorrect when user registered GitHub with Google/other providers
             if (email == null || email.isEmpty()) {
-                email = login + "@github.com";
-                log.warn("Using synthetic email for GitHub user: {} (login: {})", email, login);
+                String errorMsg = "Cannot authenticate: GitHub email is private and not accessible. " +
+                        "Please make your email public in GitHub Settings (Settings > Email > Public) " +
+                        "or contact support for assistance.";
+                log.error("❌ GitHub user {} has no accessible email. Rejecting login with message: {}", login, errorMsg);
+                throw new IllegalArgumentException(errorMsg);
             }
+
+            log.info("✅ GitHub email validation successful for user {}: email = {}", login, email);
 
             String name = userNode.get("name") != null ? userNode.get("name").asText() : userNode.get("login").asText();
 
+            // Ensure name is not null or empty
+            if (name == null || name.trim().isEmpty()) {
+                name = login;
+                log.warn("GitHub name was empty, using login instead: {}", login);
+            }
+
             // Split name into firstName and lastName
-            String[] nameParts = name.split(" ", 2);
-            String firstName = nameParts[0];
-            String lastName = nameParts.length > 1 ? nameParts[1] : "";
+            // Divide the name roughly in half
+            String[] nameParts = name.trim().split("\\s+");
+            String firstName;
+            String lastName;
+
+            if (nameParts.length == 1) {
+                // Single name: everything is firstName
+                firstName = nameParts[0];
+                lastName = "";
+            } else if (nameParts.length == 2) {
+                // Two names: first is firstName, second is lastName
+                firstName = nameParts[0];
+                lastName = nameParts[1];
+            } else {
+                // 3+ names: divide roughly in half
+                // For 3 names: midpoint = 2, so firstName gets first 2, lastName gets last 1
+                // For 4 names: midpoint = 2, so firstName gets first 2, lastName gets last 2
+                int midpoint = (nameParts.length) / 2;
+                if (nameParts.length % 2 == 1) {
+                    // Odd number: give more to firstName
+                    midpoint = (nameParts.length + 1) / 2;
+                }
+                firstName = String.join(" ", Arrays.copyOf(nameParts, midpoint));
+                lastName = String.join(" ", Arrays.copyOfRange(nameParts, midpoint, nameParts.length));
+            }
+
+            // Ensure firstName is never empty
+            if (firstName == null || firstName.trim().isEmpty()) {
+                firstName = login;
+                log.warn("GitHub firstName was empty, using login instead: {}", login);
+            }
 
             log.info("GitHub token validated successfully for user: {}", email);
 
@@ -202,7 +244,7 @@ public class OAuthServiceImpl implements OAuthService {
             log.info("Fetching primary email from GitHub /user/emails endpoint");
 
             HttpHeaders headers = new HttpHeaders();
-            headers.set("Authorization", "Bearer " + accessToken);
+            headers.set("Authorization", "token " + accessToken);
             headers.set("Accept", "application/vnd.github+json");
             headers.set("X-GitHub-Api-Version", "2022-11-28");
 
@@ -280,6 +322,9 @@ public class OAuthServiceImpl implements OAuthService {
     private String exchangeGoogleCodeForToken(String code) {
         try {
             log.info("Exchanging Google code for ID token");
+            log.info("Google Client ID: {}", googleClientId);
+            log.info("Google Client Secret configured: {}", googleClientSecret != null && !googleClientSecret.isEmpty());
+            log.info("Authorization code: {}", code != null ? code.substring(0, Math.min(10, code.length())) + "..." : "null");
 
             // Prepare parameters for code exchange
             Map<String, String> params = new HashMap<>();
@@ -287,12 +332,29 @@ public class OAuthServiceImpl implements OAuthService {
             params.put("client_secret", googleClientSecret);
             params.put("code", code);
             params.put("grant_type", "authorization_code");
+            params.put("redirect_uri", "http://localhost:3000/auth/google/callback");
+
+            log.info("Request parameters: client_id={}, client_secret={}, code={}, grant_type={}, redirect_uri={}",
+                    googleClientId,
+                    googleClientSecret != null ? "***" : "null",
+                    code != null ? code.substring(0, Math.min(10, code.length())) + "..." : "null",
+                    "authorization_code",
+                    "http://localhost:3000/auth/google/callback");
 
             HttpHeaders headers = new HttpHeaders();
             headers.set("Accept", "application/json");
+            headers.setContentType(org.springframework.http.MediaType.APPLICATION_FORM_URLENCODED);
 
-            HttpEntity<Map<String, String>> entity = new HttpEntity<>(params, headers);
+            // Convert map to form-encoded string
+            StringBuilder formBody = new StringBuilder();
+            params.forEach((key, value) -> {
+                if (formBody.length() > 0) formBody.append("&");
+                formBody.append(key).append("=").append(value);
+            });
 
+            HttpEntity<String> entity = new HttpEntity<>(formBody.toString(), headers);
+
+            log.info("Sending POST request to https://oauth2.googleapis.com/token");
             ResponseEntity<String> response = restTemplate.exchange(
                     "https://oauth2.googleapis.com/token",
                     HttpMethod.POST,
@@ -300,8 +362,13 @@ public class OAuthServiceImpl implements OAuthService {
                     String.class
             );
 
+            log.info("Google OAuth token endpoint response status: {}", response.getStatusCode());
+            log.info("Google OAuth token endpoint response body: {}", response.getBody());
+
             if (!response.getStatusCode().is2xxSuccessful()) {
-                throw new IllegalArgumentException("Failed to exchange Google code for token");
+                log.error("Failed to exchange Google code for token. Status: {}", response.getStatusCode());
+                log.error("Response body: {}", response.getBody());
+                throw new IllegalArgumentException("Failed to exchange Google code for token. Status: " + response.getStatusCode());
             }
 
             // Parse the JSON response
@@ -310,8 +377,9 @@ public class OAuthServiceImpl implements OAuthService {
             if (responseNode.has("error")) {
                 String error = responseNode.get("error").asText();
                 String errorDescription = responseNode.has("error_description") ? responseNode.get("error_description").asText() : "";
-                log.error("Google OAuth error: {} - {}", error, errorDescription);
-                throw new IllegalArgumentException("Google OAuth error: " + error);
+                String errorUri = responseNode.has("error_uri") ? responseNode.get("error_uri").asText() : "";
+                log.error("Google OAuth error: {} - {} (URI: {})", error, errorDescription, errorUri);
+                throw new IllegalArgumentException("Google OAuth error: " + error + " - " + errorDescription);
             }
 
             String idToken = responseNode.get("id_token").asText();
@@ -335,18 +403,37 @@ public class OAuthServiceImpl implements OAuthService {
     private String exchangeGitHubCodeForToken(String code) {
         try {
             log.info("Exchanging GitHub code for access token");
+            log.info("GitHub Client ID: {}", githubClientId);
+            log.info("GitHub Client Secret configured: {}", githubClientSecret != null && !githubClientSecret.isEmpty());
+            log.info("Authorization code: {}", code != null ? code.substring(0, Math.min(10, code.length())) + "..." : "null");
 
             // Prepare parameters for code exchange
             Map<String, String> params = new HashMap<>();
             params.put("client_id", githubClientId);
             params.put("client_secret", githubClientSecret);
             params.put("code", code);
+            params.put("redirect_uri", "http://localhost:3000/auth/github/callback");
+
+            log.info("Request parameters: client_id={}, client_secret={}, code={}, redirect_uri={}",
+                    githubClientId,
+                    githubClientSecret != null ? "***" : "null",
+                    code != null ? code.substring(0, Math.min(10, code.length())) + "..." : "null",
+                    "http://localhost:3000/auth/github/callback");
 
             HttpHeaders headers = new HttpHeaders();
             headers.set("Accept", "application/json");
+            headers.setContentType(org.springframework.http.MediaType.APPLICATION_FORM_URLENCODED);
 
-            HttpEntity<Map<String, String>> entity = new HttpEntity<>(params, headers);
+            // Convert map to form-encoded string
+            StringBuilder formBody = new StringBuilder();
+            params.forEach((key, value) -> {
+                if (formBody.length() > 0) formBody.append("&");
+                formBody.append(key).append("=").append(value);
+            });
 
+            HttpEntity<String> entity = new HttpEntity<>(formBody.toString(), headers);
+
+            log.info("Sending POST request to https://github.com/login/oauth/access_token");
             ResponseEntity<String> response = restTemplate.exchange(
                     "https://github.com/login/oauth/access_token",
                     HttpMethod.POST,
@@ -354,8 +441,13 @@ public class OAuthServiceImpl implements OAuthService {
                     String.class
             );
 
+            log.info("GitHub OAuth token endpoint response status: {}", response.getStatusCode());
+            log.info("GitHub OAuth token endpoint response body: {}", response.getBody());
+
             if (!response.getStatusCode().is2xxSuccessful()) {
-                throw new IllegalArgumentException("Failed to exchange GitHub code for token");
+                log.error("Failed to exchange GitHub code for token. Status: {}", response.getStatusCode());
+                log.error("Response body: {}", response.getBody());
+                throw new IllegalArgumentException("Failed to exchange GitHub code for token. Status: " + response.getStatusCode());
             }
 
             // Parse the JSON response
@@ -363,8 +455,10 @@ public class OAuthServiceImpl implements OAuthService {
 
             if (responseNode.has("error")) {
                 String error = responseNode.get("error").asText();
-                log.error("GitHub API error: {}", error);
-                throw new IllegalArgumentException("GitHub OAuth error: " + error);
+                String errorDescription = responseNode.has("error_description") ? responseNode.get("error_description").asText() : "";
+                String errorUri = responseNode.has("error_uri") ? responseNode.get("error_uri").asText() : "";
+                log.error("GitHub API error: {} - {} (URI: {})", error, errorDescription, errorUri);
+                throw new IllegalArgumentException("GitHub OAuth error: " + error + " - " + errorDescription);
             }
 
             String accessToken = responseNode.get("access_token").asText();

@@ -57,7 +57,7 @@ class SubscriptionMapperTest extends BaseIntegrationTest {
                 .description("Basic database hosting plan")
                 .pricePerMonth(new BigDecimal("9.99"))
                 .maxInstances(3)
-                .maxStorageGB(10L)
+                .maxStorageMB(10L)
                 .build();
 
         LocalDateTime now = LocalDateTime.now();
@@ -238,7 +238,7 @@ class SubscriptionMapperTest extends BaseIntegrationTest {
                 .description("Professional database hosting plan")
                 .pricePerMonth(new BigDecimal("29.99"))
                 .maxInstances(10)
-                .maxStorageGB(50L)
+                .maxStorageMB(50L)
                 .build();
 
         LocalDateTime now = LocalDateTime.now();
@@ -359,7 +359,7 @@ class SubscriptionMapperTest extends BaseIntegrationTest {
                 .description("Enterprise database hosting plan")
                 .pricePerMonth(new BigDecimal("199.99"))
                 .maxInstances(50)
-                .maxStorageGB(500L)
+                .maxStorageMB(500L)
                 .build();
 
         LocalDateTime now = LocalDateTime.now();

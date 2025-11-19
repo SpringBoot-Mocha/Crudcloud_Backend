@@ -21,6 +21,7 @@ import com.crudzaso.CrudCloud.repository.UserRepository;
 import com.crudzaso.CrudCloud.service.DatabaseInstanceService;
 import com.crudzaso.CrudCloud.service.DatabaseProvisioningService;
 import com.crudzaso.CrudCloud.service.CredentialEncryptionService;
+import com.crudzaso.CrudCloud.service.EmailService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -49,6 +50,7 @@ public class DatabaseInstanceServiceImpl implements DatabaseInstanceService {
     private final DatabaseInstanceMapper databaseInstanceMapper;
     private final DatabaseProvisioningService provisioningService;
     private final CredentialEncryptionService encryptionService;
+    private final EmailService emailService;
 
     @Value("${provisioning.enabled:false}")
     private boolean provisioningEnabled;
@@ -169,7 +171,21 @@ public class DatabaseInstanceServiceImpl implements DatabaseInstanceService {
             // Note: We return credentials in plaintext ONLY in this response
             log.info("📧 Returning credentials to user (plaintext shown only once)");
 
-            // TODO: Email credentials to user as well
+            // Send email notification to user with instance creation details
+            try {
+                emailService.notifyInstanceCreated(
+                    user.getEmail(),
+                    user.getFirstName(),
+                    containerName,
+                    engine.getName(),
+                    updatedInstance.getHost(),
+                    updatedInstance.getPort(),
+                    containerName,  // database name
+                    username
+                );
+            } catch (Exception e) {
+                log.warn("Failed to send instance creation notification email: {}", e.getMessage());
+            }
 
             DatabaseInstanceResponse response = databaseInstanceMapper.toResponse(updatedInstance);
             // Enrich with plaintext credentials from this creation
@@ -418,6 +434,23 @@ public class DatabaseInstanceServiceImpl implements DatabaseInstanceService {
         credentialRepository.save(credential);
 
         log.info("Password rotated successfully for instance ID: {}", id);
+
+        // Send email notification with new password
+        try {
+            User user = instance.getUser();
+            emailService.notifyPasswordRotated(
+                user.getEmail(),
+                user.getFirstName(),
+                instance.getContainerName(),
+                instance.getHost(),
+                instance.getPort(),
+                instance.getContainerName(),
+                credential.getUsername(),
+                newPlainPassword
+            );
+        } catch (Exception e) {
+            log.warn("Failed to send password rotation notification email: {}", e.getMessage());
+        }
 
         return databaseInstanceMapper.toResponse(instance);
     }

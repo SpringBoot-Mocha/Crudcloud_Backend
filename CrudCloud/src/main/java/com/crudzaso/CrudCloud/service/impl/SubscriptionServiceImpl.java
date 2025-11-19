@@ -109,7 +109,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
         // Send automatic email notification about plan change
         try {
             String userName = user.getFirstName() + " " + user.getLastName();
-            Integer storageMB = (int) (newPlan.getMaxStorageGB() * 1024); // Convert GB to MB
+            Integer storageMB = newPlan.getMaxStorageMB().intValue();
             String price = newPlan.getPricePerMonth().toString();
 
             emailService.notifyPlanChanged(

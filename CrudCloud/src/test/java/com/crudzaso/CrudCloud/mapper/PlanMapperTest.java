@@ -37,12 +37,12 @@ class PlanMapperTest extends BaseIntegrationTest {
     void setUp() {
         // Setup test entity
         plan = Plan.builder()
-                .id(1L)
-                .name("Basic Plan")
-                .description("Basic database hosting plan")
-                .pricePerMonth(new BigDecimal("9.99"))
-                .maxInstances(3)
-                .maxStorageGB(10L)
+                .id(2L)
+                .name("STANDARD")
+                .description("Plan Estándar - 5 instancias, 750 MB almacenamiento")
+                .pricePerMonth(new BigDecimal("12000.00"))
+                .maxInstances(5)
+                .maxStorageMB(750L)
                 .build();
     }
 
@@ -58,7 +58,7 @@ class PlanMapperTest extends BaseIntegrationTest {
         assertEquals(plan.getDescription(), response.getDescription());
         assertEquals(plan.getPricePerMonth(), response.getPriceMonth()); // Tests the field mapping
         assertEquals(plan.getMaxInstances(), response.getMaxInstances());
-        assertEquals(plan.getMaxStorageGB(), response.getMaxStorageGB());
+        assertEquals(plan.getMaxStorageMB(), response.getMaxStorageMB());
     }
 
     @Test
@@ -78,8 +78,8 @@ class PlanMapperTest extends BaseIntegrationTest {
                 .name("Free Plan")
                 .description(null)
                 .pricePerMonth(null)
-                .maxInstances(1)
-                .maxStorageGB(1L)
+                .maxInstances(2)
+                .maxStorageMB(150L)
                 .build();
 
         // When
@@ -92,19 +92,19 @@ class PlanMapperTest extends BaseIntegrationTest {
         assertNull(response.getDescription());
         assertNull(response.getPriceMonth()); // Tests null price mapping
         assertEquals(planWithNullFields.getMaxInstances(), response.getMaxInstances());
-        assertEquals(planWithNullFields.getMaxStorageGB(), response.getMaxStorageGB());
+        assertEquals(planWithNullFields.getMaxStorageMB(), response.getMaxStorageMB());
     }
 
     @Test
     void toResponse_PlanWithZeroPrice_ReturnsResponseWithZeroPrice() {
         // Given
         Plan freePlan = Plan.builder()
-                .id(3L)
-                .name("Free Plan")
-                .description("Free database hosting plan")
+                .id(1L)
+                .name("Free")
+                .description("Plan Gratuito - 2 instancias, 150 MB almacenamiento")
                 .pricePerMonth(BigDecimal.ZERO)
-                .maxInstances(1)
-                .maxStorageGB(1L)
+                .maxInstances(2)
+                .maxStorageMB(150L)
                 .build();
 
         // When
@@ -116,31 +116,31 @@ class PlanMapperTest extends BaseIntegrationTest {
         assertEquals(freePlan.getName(), response.getName());
         assertEquals(BigDecimal.ZERO, response.getPriceMonth());
         assertEquals(freePlan.getMaxInstances(), response.getMaxInstances());
-        assertEquals(freePlan.getMaxStorageGB(), response.getMaxStorageGB());
+        assertEquals(freePlan.getMaxStorageMB(), response.getMaxStorageMB());
     }
 
     @Test
     void toResponse_PlanWithHighPrice_ReturnsResponseWithHighPrice() {
         // Given
-        Plan enterprisePlan = Plan.builder()
-                .id(4L)
-                .name("Enterprise Plan")
-                .description("Enterprise database hosting plan")
-                .pricePerMonth(new BigDecimal("999.99"))
-                .maxInstances(100)
-                .maxStorageGB(1000L)
+        Plan premiumPlan = Plan.builder()
+                .id(3L)
+                .name("PREMIUM")
+                .description("Plan Premium - 10 instancias, 2048 MB almacenamiento")
+                .pricePerMonth(new BigDecimal("39900.00"))
+                .maxInstances(10)
+                .maxStorageMB(2048L)
                 .build();
 
         // When
-        PlanResponse response = planMapper.toResponse(enterprisePlan);
+        PlanResponse response = planMapper.toResponse(premiumPlan);
 
         // Then
         assertNotNull(response);
-        assertEquals(enterprisePlan.getId(), response.getId());
-        assertEquals(enterprisePlan.getName(), response.getName());
-        assertEquals(new BigDecimal("999.99"), response.getPriceMonth());
-        assertEquals(enterprisePlan.getMaxInstances(), response.getMaxInstances());
-        assertEquals(enterprisePlan.getMaxStorageGB(), response.getMaxStorageGB());
+        assertEquals(premiumPlan.getId(), response.getId());
+        assertEquals(premiumPlan.getName(), response.getName());
+        assertEquals(new BigDecimal("39900.00"), response.getPriceMonth());
+        assertEquals(premiumPlan.getMaxInstances(), response.getMaxInstances());
+        assertEquals(premiumPlan.getMaxStorageMB(), response.getMaxStorageMB());
     }
 
 
@@ -148,21 +148,21 @@ class PlanMapperTest extends BaseIntegrationTest {
     void toResponseList_ValidPlans_ReturnsCorrectResponseList() {
         // Given
         Plan plan2 = Plan.builder()
-                .id(6L)
-                .name("Pro Plan")
-                .description("Professional database hosting plan")
-                .pricePerMonth(new BigDecimal("29.99"))
+                .id(3L)
+                .name("PREMIUM")
+                .description("Plan Premium - 10 instancias, 2048 MB almacenamiento")
+                .pricePerMonth(new BigDecimal("39900.00"))
                 .maxInstances(10)
-                .maxStorageGB(50L)
+                .maxStorageMB(2048L)
                 .build();
 
         Plan plan3 = Plan.builder()
-                .id(7L)
-                .name("Business Plan")
-                .description("Business database hosting plan")
-                .pricePerMonth(new BigDecimal("99.99"))
-                .maxInstances(25)
-                .maxStorageGB(200L)
+                .id(1L)
+                .name("Free")
+                .description("Plan Gratuito - 2 instancias, 150 MB almacenamiento")
+                .pricePerMonth(BigDecimal.ZERO)
+                .maxInstances(2)
+                .maxStorageMB(150L)
                 .build();
 
         List<Plan> plans = Arrays.asList(plan, plan2, plan3);

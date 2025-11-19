@@ -69,6 +69,16 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     public AuthResponse loginWithOAuth(OAuthUserInfo oauthUserInfo) {
         log.info("🔐 Attempting OAuth login with {} for email: {}", oauthUserInfo.getProvider(), oauthUserInfo.getEmail());
 
+        // ✅ CRITICAL VALIDATION: Email must never be null (safety net)
+        if (oauthUserInfo.getEmail() == null || oauthUserInfo.getEmail().isEmpty()) {
+            String errorMsg = "Cannot authenticate: Email is missing from OAuth provider response. " +
+                    "Please ensure your email is public and accessible in your " +
+                    oauthUserInfo.getProvider() + " settings.";
+            log.error("❌ CRITICAL: OAuth user info has null/empty email! Provider: {}, email: {}",
+                    oauthUserInfo.getProvider(), oauthUserInfo.getEmail());
+            throw new IllegalArgumentException(errorMsg);
+        }
+
         // Try to find existing user by OAuth provider ID
         Optional<User> existingUserByOAuth = userRepository.findByOauthProviderId(oauthUserInfo.getProviderId());
 
